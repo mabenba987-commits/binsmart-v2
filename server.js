@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
+const fs = require('fs');
 const fetch = (...args) => import('node-fetch').then(({default: f}) => f(...args));
 
 const app = express();
@@ -8,6 +10,19 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '20mb' }));
 app.use(express.static('public'));
+app.use(express.static('.'));
+
+app.get('/', (req, res) => {
+  const publicPath = path.join(__dirname, 'public', 'index.html');
+  const rootPath = path.join(__dirname, 'index.html');
+  if (fs.existsSync(publicPath)) {
+    res.sendFile(publicPath);
+  } else if (fs.existsSync(rootPath)) {
+    res.sendFile(rootPath);
+  } else {
+    res.send('<h1>BinSmart API running</h1>');
+  }
+});
 
 app.post('/analyze', async (req, res) => {
   try {
@@ -25,58 +40,58 @@ app.post('/analyze', async (req, res) => {
 Tu misión: analizar la foto de un producto y responder en segundos si vale la pena comprarlo para uso personal, regalo o reventa local en Miami.
 
 REGLAS CRÍTICAS:
-- Si el producto NO está identificado con suficiente confianza, NO inventes precios ni recomendaciones
-- Prioriza etiquetas Amazon (tienen ASIN) > texto en caja > marca+modelo > imagen del producto
-- Las etiquetas de colores (naranja, amarilla, verde) del bin store son etiquetas internas del distribuidor — NO son Amazon
-- Productos de Home Depot (Glacier Bay, PerforMAX), Walmart exclusivos, etc. pueden no aparecer en Amazon — búscalos por marca+modelo
-- Amazon se usa como REFERENCIA de valor, no como canal de venta principal
+- NUNCA inventes precios. Siempre identifica el producto exacto con marca+modelo+color+talla antes de dar precio.
+- Si hay ASIN en la etiqueta, ese es el producto exacto — úsalo.
+- Las etiquetas naranja, amarilla (RTV), verde del bin store son internas del distribuidor — NO tienen precio útil.
+- Solo la etiqueta blanca Amazon tiene ASIN válido.
+- Productos de Home Depot (Glacier Bay, PerforMAX, Zenna Home) no aparecen en Amazon — buscar por marca+modelo.
+- Si no puedes confirmar el precio, da veredicto provisional y pide al usuario que verifique.
 
-CANALES DE REVENTA EN MIAMI (en orden de prioridad):
+CANALES DE REVENTA EN MIAMI:
 1. Facebook Marketplace Miami
 2. OfferUp
-3. Flea Market / Swap Shop
-4. Bundles (agrupar productos similares)
-5. eBay (último recurso)
-NO mencionar Amazon FBA como canal de venta.
+3. Flea Market
+4. Bundles
+5. eBay
 
 PRECIOS DEL BIN: $1 / $2 / $4 / $6 / $8 / $12 / $16
 
 FÓRMULA ROI:
-- Ganancia neta = precio venta estimado - precio bin - 15% fees
+- Ganancia neta = precio venta - precio bin - 15% fees
 - ROI = (ganancia neta / precio bin) × 100
-- 🟢 COMPRA: ROI > 150% y fácil de vender
-- 🟡 REVISA: ROI 80-150% o dudas sobre condición/piezas
-- 🔴 PASA: ROI < 80% o muy difícil vender en Miami
+- COMPRA: ROI > 150%
+- REVISA: ROI 80-150%
+- PASA: ROI < 80%
 
-RESPONDE SIEMPRE EN ESTE FORMATO JSON EXACTO (sin markdown, sin texto extra):
+RESPONDE SOLO CON ESTE JSON EXACTO:
 {
-  "producto": "Nombre claro y específico del producto",
-  "categoria": "Categoría (ej: Herramienta, Ropa, Juguete, Plomería, Electrónico, etc.)",
-  "descripcion": "Qué es en 1 oración simple",
-  "para_que_sirve": "Para qué sirve en 1-2 oraciones prácticas",
-  "quien_lo_usa": "A quién va dirigido (ej: hombres adultos, niños 5-10 años, dueños de casa, etc.)",
-  "uso_personal": "¿Vale para uso propio o como regalo? Sé específico",
-  "valor_mercado": "Precio aproximado en Amazon o mercado (ej: $27-35 en Amazon)",
-  "precio_reventa_miami": "Precio realista en Facebook Marketplace / OfferUp Miami",
-  "mejor_canal": "Dónde venderlo en Miami y por qué",
+  "producto": "Nombre exacto del producto",
+  "categoria": "Categoría",
+  "descripcion": "Qué es en 1 oración",
+  "para_que_sirve": "Para qué sirve en 1-2 oraciones",
+  "quien_lo_usa": "A quién va dirigido",
+  "uso_personal": "Vale para uso propio o regalo",
+  "valor_mercado": "Precio en Amazon o mercado",
+  "precio_reventa_miami": "Precio en Facebook Marketplace Miami",
+  "mejor_canal": "Dónde venderlo en Miami",
   "roi_estimado": número o null,
   "veredicto": "COMPRA" o "REVISA" o "PASA",
   "emoji_veredicto": "🟢" o "🟡" o "🔴",
-  "razon_veredicto": "Razón principal del veredicto en 1 oración",
-  "tip_rapido": "Un tip práctico de Mauricio el experto (ej: bundle con otros, buscar piezas completas, etc.)",
+  "razon_veredicto": "Razón en 1 oración",
+  "tip_rapido": "Un tip práctico",
   "confianza": número del 0 al 100,
-  "imagen_busqueda": "3-5 palabras en inglés para buscar imagen del producto en Google"
+  "imagen_busqueda": "3-5 palabras en inglés para buscar imagen"
 }`;
 
     const userPrompt = `Analiza este producto. ${priceContext} ${extraContext}
 
-Identifica el producto desde la imagen usando este orden de prioridad:
-1. ¿Hay etiqueta Amazon con ASIN o nombre? → úsala
-2. ¿Hay texto visible en la caja? → léelo
-3. ¿Hay marca y modelo visible? → úsalos
-4. ¿Solo hay imagen del producto? → identifica por visual
+Identifica usando este orden:
+1. Etiqueta Amazon con ASIN → úsala directamente
+2. Texto en la caja → léelo
+3. Marca y modelo → úsalos
+4. Solo imagen → identifica visualmente
 
-Responde SOLO con el JSON, sin texto adicional.`;
+Responde SOLO con el JSON.`;
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -109,27 +124,23 @@ Responde SOLO con el JSON, sin texto adicional.`;
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('Anthropic API error:', data);
       return res.status(500).json({ error: 'Error de API', detail: data });
     }
 
     const rawText = data.content?.[0]?.text || '';
-
-    // Clean and parse JSON
     const cleanText = rawText.replace(/```json|```/g, '').trim();
+
     let result;
     try {
       result = JSON.parse(cleanText);
     } catch (e) {
-      console.error('JSON parse error:', e, 'Raw:', rawText);
       return res.status(500).json({ error: 'Error al parsear respuesta', raw: rawText });
     }
 
     res.json(result);
 
   } catch (err) {
-    console.error('Server error:', err);
-    res.status(500).json({ error: 'Error interno del servidor', detail: err.message });
+    res.status(500).json({ error: 'Error interno', detail: err.message });
   }
 });
 
