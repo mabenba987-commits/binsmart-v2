@@ -1,5 +1,4 @@
-{
-  "name": "binsmart-server",
+name": "binsmart-server",
   "version": "2.0.0",
   "description": "BinSmart AI backend - proxy server for Anthropic API",
   "main": "server.js",
