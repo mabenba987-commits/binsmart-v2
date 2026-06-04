@@ -1,17 +1,14 @@
-name": "binsmart-server",
-  "version": "2.0.0",
-  "description": "BinSmart AI backend - proxy server for Anthropic API",
+{
+  "name": "binsmart-server",
+  "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "node-fetch": "^3.3.2"
+    "express": "^4.18.2"
   }
 }
