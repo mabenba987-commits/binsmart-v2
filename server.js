@@ -49,7 +49,7 @@ RESPONDE SOLO CON JSON — sin texto, sin markdown:
         "x-api-key":       KEY,
       },
       body: JSON.stringify({
-        model:      "claude-sonnet-4-20250514",
+        model:      "claude-sonnet-4-5",
         max_tokens: 1200,
         system:     SYSTEM,
         messages: [{
