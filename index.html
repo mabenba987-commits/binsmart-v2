@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,6 +12,7 @@
   button{font-family:inherit;cursor:pointer;border:none;outline:none;}
   @keyframes spin{to{transform:rotate(360deg)}}
   @keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes expandIn{from{opacity:0;max-height:0}to{opacity:1;max-height:2000px}}
   .spinner{width:50px;height:50px;border-radius:50%;border:3px solid #2E7D32;border-top-color:transparent;animation:spin .85s linear infinite;}
   .page{padding:0 18px 60px;display:flex;flex-direction:column;min-height:100vh;}
   .card{background:#fff;border-radius:16px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #EAE4DA;}
@@ -41,33 +43,46 @@
   #screen-analyzing{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:0 28px;}
   #screen-analyzing.active{display:flex;}
 
-  /* Result */
-  #screen-result{display:none;padding-bottom:72px;animation:up .4s ease;}
+  /* Result — CONDENSED FIRST SCREEN */
+  #screen-result{display:none;padding-bottom:30px;animation:up .4s ease;}
   #screen-result.active{display:block;}
-  .product-hero{position:relative;width:100%;height:220px;background:#EDE8E0;overflow:hidden;}
+
+  .verdict-hero{padding:26px 20px 22px;text-align:center;position:relative;}
+  .verdict-emoji{font-size:46px;line-height:1;margin-bottom:6px;}
+  .verdict-word{font-weight:900;font-size:26px;color:#fff;letter-spacing:1px;text-shadow:0 2px 6px rgba(0,0,0,.15);}
+  .verdict-sub{font-size:12px;color:rgba(255,255,255,.85);margin-top:4px;}
+
+  .condensed-card{background:#fff;border-radius:18px;margin:-18px 14px 0;position:relative;padding:18px 16px 16px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
+  .condensed-name{font-size:19px;font-weight:800;line-height:1.25;margin-bottom:10px;}
+  .condensed-prices{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
+  .cp-block{flex:1;}
+  .cp-label{font-size:9px;color:#9A8070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;}
+  .cp-val{font-size:20px;font-weight:900;}
+  .cp-divider{width:1px;height:30px;background:#EAE4DA;}
+  .condensed-gain{display:inline-block;margin-top:8px;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;}
+  .condensed-checklist{margin-top:16px;}
+  .condensed-check-title{font-size:10px;font-weight:700;color:#9A8070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+  .cc-item{display:flex;align-items:flex-start;gap:9px;padding:6px 0;font-size:13.5px;color:#2A2A2A;line-height:1.4;}
+  .cc-dot{width:18px;height:18px;border-radius:50%;flex-shrink:0;margin-top:1px;}
+
+  .expand-btn{width:100%;margin-top:16px;padding:14px;border-radius:12px;background:#F8F6F2;border:1.5px solid #E8E0D0;color:#5A4A3A;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;}
+  .expand-btn .chev{transition:transform .25s;font-size:11px;}
+  .expand-btn.open .chev{transform:rotate(180deg);}
+
+  .full-details{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease, opacity .3s ease;}
+  .full-details.open{max-height:none;opacity:1;animation:expandIn .4s ease;}
+  .full-inner{padding:14px 14px 0;}
+
+  .product-hero{position:relative;width:100%;height:180px;background:#EDE8E0;overflow:hidden;border-radius:14px;margin-bottom:12px;}
   .product-hero img{width:100%;height:100%;object-fit:cover;}
   .hero-no-img{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
-  .hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.6) 0%,transparent 55%);}
-  .hero-badge-uso{position:absolute;top:10px;right:10px;background:rgba(0,0,0,.55);border-radius:6px;padding:3px 8px;font-size:9px;color:rgba(255,255,255,.8);letter-spacing:1px;}
-  .hero-bottom{position:absolute;bottom:14px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-end;}
-  .hero-verdict-label{font-size:9px;color:rgba(255,255,255,.65);letter-spacing:3px;margin-bottom:3px;}
-  .hero-verdict{font-weight:900;font-size:34px;color:#fff;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.5);}
-  .hero-gain{color:#fff;border-radius:10px;padding:8px 12px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.3);}
-  .hero-gain-label{font-size:8px;letter-spacing:1px;opacity:.8;}
-  .hero-gain-val{font-size:16px;font-weight:900;}
-  .product-info{padding:16px 16px 14px;background:#fff;}
   .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
   .pill{border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;}
-  .product-name{font-size:20px;font-weight:800;line-height:1.2;margin-bottom:4px;}
   .product-model{font-size:11px;color:#9A8070;margin-bottom:8px;}
   .verdict-reason{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.5;}
   .product-desc{font-size:14px;color:#4A4A4A;line-height:1.7;margin-bottom:12px;}
-  .amazon-price{font-size:26px;font-weight:900;color:#B12704;}
-  .amazon-label{font-size:13px;color:#9A8070;}
-  .savings{font-size:13px;color:#2E7D32;font-weight:600;margin-bottom:12px;margin-top:4px;}
-  .other-prices{display:flex;gap:8px;flex-wrap:wrap;}
+  .other-prices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
   .other-price{border-radius:8px;padding:5px 11px;font-size:12px;}
-  .result-inner{padding:0 14px;}
   .sec-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #EAE4DA;}
   .sec-title{display:flex;align-items:center;gap:7px;margin-bottom:12px;}
   .sec-ico{font-size:15px;}
@@ -84,14 +99,11 @@
   .metric-label{font-size:9px;color:#9A8070;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
   .metric-val{font-weight:800;word-break:break-word;}
   .personal-box{background:#E8F5E9;border-radius:10px;padding:12px;border:1px solid #C8E6C9;font-size:14px;color:#1B4D1B;line-height:1.6;}
-  .check-item{display:flex;align-items:flex-start;gap:11px;background:#F8F6F2;border-radius:10px;padding:11px 12px;border:1px solid #EAE4DA;margin-bottom:8px;}
-  .check-box{width:22px;height:22px;border-radius:5px;flex-shrink:0;margin-top:1px;}
-  .check-txt{font-size:14px;color:#2A2A2A;line-height:1.4;}
   .conf-bar-bg{height:9px;background:#E8E0D4;border-radius:5px;overflow:hidden;}
   .conf-bar{height:100%;border-radius:5px;transition:width 1s ease;}
   .conf-warn{margin-top:10px;background:#FFF3E0;border-radius:8px;padding:10px 12px;border:1px solid #FFE0B2;font-size:12px;color:#BF360C;line-height:1.5;}
-  .new-scan{width:100%;padding:20px;border-radius:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;font-weight:800;font-size:16px;box-shadow:0 6px 24px rgba(27,94,32,.35);margin-top:4px;}
-  .footer{text-align:center;font-size:11px;color:#C0B4A0;margin-top:14px;font-style:italic;}
+  .new-scan{width:100%;padding:20px;border-radius:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;font-weight:800;font-size:16px;box-shadow:0 6px 24px rgba(27,94,32,.35);margin-top:14px;}
+  .footer{text-align:center;font-size:11px;color:#C0B4A0;margin-top:14px;font-style:italic;padding-bottom:20px;}
 
   /* Error */
   #screen-error{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;text-align:center;gap:16px;}
@@ -160,90 +172,104 @@
   <div style="font-size:12px;color:#9A8070;text-align:center;line-height:2;">Identificando · Valorando · Decidiendo</div>
 </div>
 
-<!-- ══ RESULTADO ══ -->
+<!-- ══ RESULTADO — CONDENSADO PRIMERO ══ -->
 <div id="screen-result">
-  <div class="product-hero" id="hero-wrap">
-    <img id="hero-img" src="" alt="" onerror="this.style.display='none';document.getElementById('hero-no-img').style.display='flex';"/>
-    <div id="hero-no-img" class="hero-no-img" style="display:none;">
-      <span style="font-size:48px;">📦</span>
-      <span style="font-size:12px;color:#9A8070;">Sin imagen de referencia</span>
+
+  <div class="verdict-hero" id="verdict-hero">
+    <div class="verdict-emoji" id="verdict-emoji"></div>
+    <div class="verdict-word" id="verdict-word"></div>
+    <div class="verdict-sub" id="verdict-sub"></div>
+  </div>
+
+  <div class="condensed-card">
+    <div class="condensed-name" id="condensed-name"></div>
+
+    <div class="condensed-prices">
+      <div class="cp-block">
+        <div class="cp-label">Tú pagas</div>
+        <div class="cp-val" id="cp-pagas" style="color:#1A1A1A;"></div>
+      </div>
+      <div class="cp-divider"></div>
+      <div class="cp-block">
+        <div class="cp-label">Vale en Amazon</div>
+        <div class="cp-val" id="cp-amazon" style="color:#B12704;"></div>
+      </div>
     </div>
-    <div class="hero-overlay"></div>
-    <div id="hero-uso-badge" class="hero-badge-uso">PRODUCTO EN USO</div>
-    <div class="hero-bottom">
-      <div>
-        <div class="hero-verdict-label">VEREDICTO</div>
-        <div class="hero-verdict" id="hero-verdict-txt"></div>
+    <div class="condensed-gain" id="condensed-gain"></div>
+
+    <div class="condensed-checklist">
+      <div class="condensed-check-title">🔍 Revisa antes de pagar</div>
+      <div id="condensed-check-items"></div>
+    </div>
+
+    <button class="expand-btn" id="expand-btn" onclick="toggleDetalle()">
+      <span id="expand-label">Ver análisis completo</span>
+      <span class="chev">▾</span>
+    </button>
+  </div>
+
+  <div class="full-details" id="full-details">
+    <div class="full-inner">
+
+      <div class="product-hero" id="hero-wrap">
+        <img id="hero-img" src="" alt="" style="display:none;"/>
+        <div id="hero-no-img" class="hero-no-img" style="display:flex;">
+          <span style="font-size:40px;">📦</span>
+          <span style="font-size:12px;color:#9A8070;" id="hero-no-img-txt">Sin imagen de referencia</span>
+        </div>
       </div>
-      <div class="hero-gain" id="hero-gain">
-        <div class="hero-gain-label">GANANCIA</div>
-        <div class="hero-gain-val" id="hero-gain-val"></div>
+
+      <div class="pills" id="pills"></div>
+      <div class="product-model" id="product-model"></div>
+      <div class="verdict-reason" id="verdict-reason"></div>
+      <div class="product-desc" id="product-desc"></div>
+      <div class="other-prices" id="other-prices"></div>
+
+      <!-- Casos de uso -->
+      <div class="sec-card" id="sec-usos" style="display:none;">
+        <div class="sec-title"><span class="sec-ico">💡</span><span class="sec-label">¿Para qué sirve?</span></div>
+        <div id="uso-items"></div>
       </div>
+
+      <!-- Specs -->
+      <div class="sec-card" id="sec-specs" style="display:none;">
+        <div class="sec-title"><span class="sec-ico">📋</span><span class="sec-label">Especificaciones</span></div>
+        <div class="specs-grid" id="specs-grid"></div>
+      </div>
+
+      <!-- Reventa -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · Miami</span></div>
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-label">Vender a</div><div class="metric-val" id="m-precio" style="font-size:17px;color:#B12704;"></div></div>
+          <div class="metric"><div class="metric-label">Ganancia est.</div><div class="metric-val" id="m-ganancia" style="font-size:17px;color:#2E7D32;"></div></div>
+          <div class="metric"><div class="metric-label">Canal #1</div><div class="metric-val" id="m-canal" style="font-size:14px;color:#1565C0;"></div></div>
+          <div class="metric" id="m-demanda-box"><div class="metric-label">Demanda local</div><div class="metric-val" id="m-demanda" style="font-size:14px;"></div></div>
+        </div>
+        <div style="font-size:12px;color:#9A8070;text-align:center;" id="m-canal2"></div>
+      </div>
+
+      <!-- Uso personal -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">🏠</span><span class="sec-label">Uso Personal</span></div>
+        <div class="personal-box" id="uso-personal"></div>
+      </div>
+
+      <!-- Confianza -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">📊</span><span class="sec-label">Confianza de Identificación</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:13px;color:#6A5A4A;" id="conf-label"></span>
+          <span style="font-size:22px;font-weight:900;" id="conf-pct"></span>
+        </div>
+        <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar"></div></div>
+        <div class="conf-warn" id="conf-warn" style="display:none;"></div>
+      </div>
+
     </div>
   </div>
 
-  <div class="product-info" id="product-info">
-    <div class="pills" id="pills"></div>
-    <div class="product-name" id="product-name"></div>
-    <div class="product-model" id="product-model"></div>
-    <div class="verdict-reason" id="verdict-reason"></div>
-    <div class="product-desc" id="product-desc"></div>
-    <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px;">
-      <span class="amazon-price" id="amazon-price"></span>
-      <span class="amazon-label">en Amazon</span>
-    </div>
-    <div class="savings" id="savings"></div>
-    <div class="other-prices" id="other-prices"></div>
-  </div>
-
-  <div class="result-inner">
-    <!-- Casos de uso -->
-    <div class="sec-card" id="sec-usos" style="display:none;">
-      <div class="sec-title"><span class="sec-ico">💡</span><span class="sec-label">¿Para qué sirve?</span></div>
-      <div id="uso-items"></div>
-    </div>
-
-    <!-- Specs -->
-    <div class="sec-card" id="sec-specs" style="display:none;">
-      <div class="sec-title"><span class="sec-ico">📋</span><span class="sec-label">Especificaciones</span></div>
-      <div class="specs-grid" id="specs-grid"></div>
-    </div>
-
-    <!-- Reventa -->
-    <div class="sec-card">
-      <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · Miami</span></div>
-      <div class="metrics-grid">
-        <div class="metric"><div class="metric-label">Vender a</div><div class="metric-val" id="m-precio" style="font-size:17px;color:#B12704;"></div></div>
-        <div class="metric"><div class="metric-label">Ganancia est.</div><div class="metric-val" id="m-ganancia" style="font-size:17px;color:#2E7D32;"></div></div>
-        <div class="metric"><div class="metric-label">Canal #1</div><div class="metric-val" id="m-canal" style="font-size:14px;color:#1565C0;"></div></div>
-        <div class="metric" id="m-demanda-box"><div class="metric-label">Demanda local</div><div class="metric-val" id="m-demanda" style="font-size:14px;"></div></div>
-      </div>
-      <div style="font-size:12px;color:#9A8070;text-align:center;" id="m-canal2"></div>
-    </div>
-
-    <!-- Uso personal -->
-    <div class="sec-card">
-      <div class="sec-title"><span class="sec-ico">🏠</span><span class="sec-label">Uso Personal</span></div>
-      <div class="personal-box" id="uso-personal"></div>
-    </div>
-
-    <!-- Checklist -->
-    <div class="sec-card">
-      <div class="sec-title"><span class="sec-ico">🔍</span><span class="sec-label">Inspección Antes de Pagar</span></div>
-      <div id="checklist-items"></div>
-    </div>
-
-    <!-- Confianza -->
-    <div class="sec-card">
-      <div class="sec-title"><span class="sec-ico">📊</span><span class="sec-label">Confianza de Identificación</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-size:13px;color:#6A5A4A;" id="conf-label"></span>
-        <span style="font-size:22px;font-weight:900;" id="conf-pct"></span>
-      </div>
-      <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar"></div></div>
-      <div class="conf-warn" id="conf-warn" style="display:none;"></div>
-    </div>
-
+  <div style="padding:0 14px;">
     <button class="new-scan" onclick="reiniciar()">⚡ NUEVO ESCANEO</button>
     <div class="footer">Miami · Bin Stores · Liquidación · Reventa Local</div>
   </div>
@@ -387,13 +413,16 @@ async function analizar() {
 
 // ── Mostrar resultado ─────────────────────────────────────────────
 const COLORES = {
-  COMPRAR:{bg:"#1B5E20",soft:"#E8F5E9",pill:"#C8E6C9",dark:"#1B5E20"},
-  REVISAR:{bg:"#E65100",soft:"#FFF3E0",pill:"#FFE0B2",dark:"#BF360C"},
-  PASAR:  {bg:"#B71C1C",soft:"#FFEBEE",pill:"#FFCDD2",dark:"#7F0000"},
+  COMPRAR:{bg:"#1B5E20",bgGrad:"linear-gradient(135deg,#2E7D32,#1B5E20)",soft:"#E8F5E9",pill:"#C8E6C9",dark:"#1B5E20"},
+  REVISAR:{bg:"#E65100",bgGrad:"linear-gradient(135deg,#F57C00,#E65100)",soft:"#FFF3E0",pill:"#FFE0B2",dark:"#BF360C"},
+  PASAR:  {bg:"#B71C1C",bgGrad:"linear-gradient(135deg,#D32F2F,#B71C1C)",soft:"#FFEBEE",pill:"#FFCDD2",dark:"#7F0000"},
 };
 const EMOJI = {COMPRAR:"🟢",REVISAR:"🟡",PASAR:"🔴"};
+const SUBTXT = {COMPRAR:"Buena oportunidad",REVISAR:"Verifica antes de pagar",PASAR:"No vale la pena"};
 const DMD_C = {Alta:"#1B5E20",Media:"#E65100",Baja:"#B71C1C"};
 const DMD_BG= {Alta:"#E8F5E9",Media:"#FFF3E0",Baja:"#FFEBEE"};
+
+let detalleAbierto = false;
 
 function mostrarResultado(r) {
   const v   = r.veredicto || "PASAR";
@@ -401,25 +430,41 @@ function mostrarResultado(r) {
   const pct = Math.min(100, Math.max(0, r.confianza || 0));
   const em  = EMOJI[v] || "🔴";
 
-  // Hero imagen
+  // Reset expand state
+  detalleAbierto = false;
+  document.getElementById("full-details").classList.remove("open");
+  document.getElementById("expand-btn").classList.remove("open");
+  document.getElementById("expand-label").textContent = "Ver análisis completo";
+
+  // ── Hero de veredicto (condensado) ──
+  document.getElementById("verdict-hero").style.background = col.bgGrad;
+  document.getElementById("verdict-emoji").textContent = em;
+  document.getElementById("verdict-word").textContent = v;
+  document.getElementById("verdict-sub").textContent = SUBTXT[v] || "";
+
+  // ── Tarjeta condensada ──
+  document.getElementById("condensed-name").textContent = r.nombre || "Producto sin identificar";
+  document.getElementById("cp-pagas").textContent = "$" + precio;
+  document.getElementById("cp-amazon").textContent = r.valor_amazon || "—";
+
+  const gainEl = document.getElementById("condensed-gain");
+  gainEl.style.background = col.soft;
+  gainEl.style.color = col.dark;
+  gainEl.textContent = "💰 Ganancia: " + (r.ganancia_estimada || "—");
+
+  const condCheck = document.getElementById("condensed-check-items");
+  condCheck.innerHTML = "";
+  (r.checklist || []).slice(0,3).forEach(item => {
+    condCheck.innerHTML += `<div class="cc-item"><div class="cc-dot" style="background:${col.soft};border:2px solid ${col.bg}"></div><div>${item}</div></div>`;
+  });
+
+  // ── Detalle completo (sin imagen externa — ver nota de mantenimiento) ──
   const heroImg = document.getElementById("hero-img");
   const heroNI  = document.getElementById("hero-no-img");
-  const heroBadge = document.getElementById("hero-uso-badge");
-  if (r.imagen_query) {
-    heroImg.src = "https://source.unsplash.com/700x420/?" + encodeURIComponent(r.imagen_query);
-    heroImg.style.display = "block"; heroNI.style.display = "none"; heroBadge.style.display = "block";
-  } else {
-    heroImg.style.display = "none"; heroNI.style.display = "flex"; heroBadge.style.display = "none";
-  }
-  document.getElementById("hero-wrap").style.background = col.bg;
+  heroImg.style.display = "none";
+  heroNI.style.display = "flex";
+  document.getElementById("hero-no-img-txt").textContent = r.nombre ? "Referencia: " + r.nombre : "Sin imagen de referencia";
 
-  // Veredicto en hero
-  document.getElementById("hero-verdict-txt").textContent = em + " " + v;
-  const gainEl = document.getElementById("hero-gain");
-  gainEl.style.background = col.bg;
-  document.getElementById("hero-gain-val").textContent = r.ganancia_estimada || "—";
-
-  // Pills
   const pillsEl = document.getElementById("pills");
   pillsEl.innerHTML = "";
   if (r.categoria) pillsEl.innerHTML += `<span class="pill" style="background:#E8F5E9;color:#1B5E20">${r.categoria}</span>`;
@@ -428,7 +473,6 @@ function mostrarResultado(r) {
   if (r.marca && r.marca !== "Genérico/OEM")
     pillsEl.innerHTML += `<span class="pill" style="background:#EDE7F6;color:#4527A0">${r.marca}</span>`;
 
-  document.getElementById("product-name").textContent = r.nombre || "";
   const modelEl = document.getElementById("product-model");
   modelEl.textContent = r.modelo ? "Modelo: " + r.modelo : "";
   modelEl.style.display = r.modelo ? "block" : "none";
@@ -438,14 +482,11 @@ function mostrarResultado(r) {
   vrEl.innerHTML = `<strong>${em} ${v}:</strong> ${r.razon || ""}`;
 
   document.getElementById("product-desc").textContent = r.sirve || "";
-  document.getElementById("amazon-price").textContent = r.valor_amazon || "—";
-  document.getElementById("savings").textContent = `Tú pagas $${precio} · Ahorras/Ganas ${r.ganancia_estimada || "—"}`;
 
   const op = document.getElementById("other-prices"); op.innerHTML = "";
   if (r.valor_walmart) op.innerHTML += `<div class="other-price" style="background:#E3F2FD"><span style="color:#1565C0;font-weight:700">Walmart: </span><span style="color:#0D47A1;font-weight:800">${r.valor_walmart}</span></div>`;
   if (r.valor_ebay)    op.innerHTML += `<div class="other-price" style="background:#EDE7F6"><span style="color:#4527A0;font-weight:700">eBay: </span><span style="color:#311B92;font-weight:800">${r.valor_ebay}</span></div>`;
 
-  // Casos de uso
   const usoSec = document.getElementById("sec-usos");
   const usoItems = document.getElementById("uso-items");
   if (r.uso_casos?.length) {
@@ -457,7 +498,6 @@ function mostrarResultado(r) {
     });
   } else { usoSec.style.display = "none"; }
 
-  // Specs
   const specSec = document.getElementById("sec-specs");
   const specGrid = document.getElementById("specs-grid");
   if (r.specs?.length) {
@@ -471,7 +511,6 @@ function mostrarResultado(r) {
     });
   } else { specSec.style.display = "none"; }
 
-  // Reventa
   document.getElementById("m-precio").textContent = r.precio_reventa || "—";
   document.getElementById("m-ganancia").textContent = r.ganancia_estimada || "—";
   document.getElementById("m-canal").textContent = r.canal_principal || "—";
@@ -482,17 +521,8 @@ function mostrarResultado(r) {
   const c2 = document.getElementById("m-canal2");
   c2.innerHTML = r.canal_secundario ? `Secundario: <strong style="color:#4A4A4A">${r.canal_secundario}</strong>` : "";
 
-  // Uso personal
   document.getElementById("uso-personal").textContent = r.uso_personal || "—";
 
-  // Checklist
-  const cl = document.getElementById("checklist-items"); cl.innerHTML = "";
-  (r.checklist || []).forEach(item => {
-    cl.innerHTML += `<div class="check-item"><div class="check-box" style="border:2px solid ${col.bg}"></div>` +
-      `<div class="check-txt">${item}</div></div>`;
-  });
-
-  // Confianza
   const confLabel = pct>=85?"Identificación confiable":pct>=70?"Identificación aceptable":"Verificar antes de pagar";
   document.getElementById("conf-label").textContent = confLabel;
   const confPct = document.getElementById("conf-pct");
@@ -506,6 +536,21 @@ function mostrarResultado(r) {
   else { warn.style.display="none"; }
 
   show("screen-result");
+}
+
+function toggleDetalle() {
+  detalleAbierto = !detalleAbierto;
+  const det = document.getElementById("full-details");
+  const btn = document.getElementById("expand-btn");
+  const lbl = document.getElementById("expand-label");
+  if (detalleAbierto) {
+    det.classList.add("open"); btn.classList.add("open");
+    lbl.textContent = "Ocultar análisis completo";
+    setTimeout(() => det.scrollIntoView({behavior:"smooth", block:"start"}), 80);
+  } else {
+    det.classList.remove("open"); btn.classList.remove("open");
+    lbl.textContent = "Ver análisis completo";
+  }
 }
 
 function mostrarError(msg) {
