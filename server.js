@@ -70,7 +70,7 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model:      "claude-sonnet-4-5-20250929. 
+        model:      "claude-sonnet-4-5-20250929."
         max_tokens: 900,
         system:     SYSTEM,
         messages: [{
