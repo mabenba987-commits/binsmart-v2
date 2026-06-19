@@ -6,7 +6,8 @@ const PORT = process.env.PORT || 3000;
 const KEY  = process.env.ANTHROPIC_API_KEY;
 
 app.use(express.json({ limit: "10mb" }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(__dirname));
+
 
 // Proxy → Anthropic API
 app.post("/api/analyze", async (req, res) => {
@@ -101,7 +102,8 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
 
 // Todas las rutas → index.html
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "index.html"));
+
 });
 
 app.listen(PORT, () => {
