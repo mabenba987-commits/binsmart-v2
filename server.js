@@ -8,7 +8,6 @@ const KEY  = process.env.ANTHROPIC_API_KEY;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
-
 // Proxy → Anthropic API
 app.post("/api/analyze", async (req, res) => {
   if (!KEY) {
@@ -30,9 +29,16 @@ IDENTIFICACIÓN (orden estricto de confianza): FNSKU/ASIN Amazon (etiqueta blanc
 - Si no hay marca visible: clasifica como OEM/Genérico — identifica su función y busca equivalente funcional. NUNCA penalices un producto solo por ser OEM; muchos generan 300-600% de margen.
 
 REGLAS DE PRECIO (innegociables):
+- AMAZON es SIEMPRE la referencia principal de precio. eBay y Walmart son secundarios y solo se muestran como complemento, NUNCA como base para calcular margen o veredicto.
 - Si confianza < 70%: NO inventes un precio exacto de Amazon. Usa un rango angosto y realista (máximo $10 de spread, ej "$15-$20", nunca "$15-$60") o indica null si no hay base real.
-- Si confianza >= 70% y hay coincidencia clara de producto: da precio exacto.
+- Si confianza >= 70% y hay coincidencia clara de producto: da precio exacto de Amazon.
 - Nunca generes un precio solo para rellenar el campo.
+
+REGLA CRÍTICA — ACCESORIO VS PRODUCTO COMPLETO:
+- Si el objeto es un ACCESORIO, CONTROL REMOTO, CABLE, CARGADOR, o COMPONENTE de un producto mayor, identificarlo y valorarlo EXACTAMENTE como ese accesorio — NUNCA como el producto completo.
+- Ejemplo: un control remoto del Fire TV Stick vale ~$15-$18 en Amazon, NO $30-$35 que es el Fire Stick completo.
+- Ejemplo: un cargador de laptop vale $20-$40, no $800 que vale la laptop entera.
+- El nombre debe reflejar exactamente lo que es: "Amazon Fire TV Stick Alexa Voice Remote" no "Amazon Fire TV Stick".
 
 REGLA DE VEREDICTO:
 - Si la identificación es insuficiente o ambigua (confianza < 70%), el veredicto NO puede ser COMPRAR. Debe ser REVISAR o PASAR.
@@ -64,7 +70,7 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
       },
       signal: controller.signal,
       body: JSON.stringify({
-        model:      "claude-sonnet-4-5-20250929",
+        model:      "claude-sonnet-4-20250514",
         max_tokens: 900,
         system:     SYSTEM,
         messages: [{
@@ -103,7 +109,6 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
 // Todas las rutas → index.html
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
-
 });
 
 app.listen(PORT, () => {
