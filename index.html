@@ -67,6 +67,8 @@
   .expand-btn{width:100%;margin-top:16px;padding:14px;border-radius:12px;background:#F8F6F2;border:1.5px solid #E8E0D0;color:#5A4A3A;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:6px;}
   .expand-btn .chev{transition:transform .25s;font-size:11px;}
   .expand-btn.open .chev{transform:rotate(180deg);}
+  .amazon-btn{width:100%;margin-top:10px;padding:14px;border-radius:12px;background:#232F3E;color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;}
+  .amazon-btn:visited{color:#fff;}
 
   .full-details{max-height:0;overflow:hidden;opacity:0;transition:max-height .35s ease, opacity .3s ease;}
   .full-details.open{max-height:none;opacity:1;animation:expandIn .4s ease;}
@@ -201,6 +203,8 @@
       <div id="condensed-check-items"></div>
     </div>
 
+    <a class="amazon-btn" id="amazon-btn" href="#" target="_blank" rel="noopener">🛒 Ver en Amazon</a>
+
     <button class="expand-btn" id="expand-btn" onclick="toggleDetalle()">
       <span id="expand-label">Ver análisis completo</span>
       <span class="chev">▾</span>
@@ -300,6 +304,8 @@ PRECIOS.forEach(p => {
     document.querySelectorAll(".price-btn").forEach(b => b.classList.remove("sel"));
     btn.classList.add("sel");
     updateBtn();
+    // FIX auto-análisis: si la foto ya estaba lista, analiza ahora que también hay precio
+    if (imagenB64) analizar();
   };
   grid.appendChild(btn);
 });
@@ -458,6 +464,9 @@ function mostrarResultado(r) {
   (r.checklist || []).slice(0,3).forEach(item => {
     condCheck.innerHTML += `<div class="cc-item"><div class="cc-dot" style="background:${col.soft};border:2px solid ${col.bg}"></div><div>${item}</div></div>`;
   });
+
+  // ── MEJORA-3: botón Ver en Amazon (producto exacto si hay ASIN, búsqueda si no) ──
+  document.getElementById("amazon-btn").href = r.amazon_url || ("https://www.amazon.com/s?k=" + encodeURIComponent(r.nombre || ""));
 
   // ── Imagen real de referencia (buscada server-side, ver MEJORA-2) ──
   const heroImg = document.getElementById("hero-img");
