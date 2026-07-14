@@ -8,20 +8,36 @@ const KEY  = process.env.ANTHROPIC_API_KEY;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
-// Busca una imagen real de referencia en Openverse (CC-licensed, sin API key).
+// Busca una imagen real de referencia en Wikimedia Commons (sin API key, muy estable).
 // Server-side para evitar el bloqueo de CORS que rompió la versión anterior con Unsplash.
+// Nota: se cambió de Openverse a Wikimedia Commons porque Openverse tiene límites
+// de uso anónimo muy estrictos que fallaban en producción (confirmado en pruebas de campo).
 async function buscarImagen(query) {
   if (!query) return null;
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 4000);
-    const url = "https://api.openverse.org/v1/images/?page_size=1&mature=false&q=" + encodeURIComponent(query);
-    const r = await fetch(url, { signal: controller.signal });
+    const params = new URLSearchParams({
+      action: "query",
+      generator: "search",
+      gsrnamespace: "6",
+      gsrsearch: query + " filetype:bitmap",
+      gsrlimit: "1",
+      prop: "imageinfo",
+      iiprop: "url",
+      iiurlwidth: "600",
+      format: "json"
+    });
+    const url = "https://commons.wikimedia.org/w/api.php?" + params.toString();
+    const r = await fetch(url, { signal: controller.signal, headers: { "User-Agent": "BinSmart/1.0 (bin store arbitrage app)" } });
     clearTimeout(timeout);
     if (!r.ok) return null;
     const data = await r.json();
-    const first = (data.results || [])[0];
-    return first ? (first.thumbnail || first.url || null) : null;
+    const pages = data?.query?.pages;
+    if (!pages) return null;
+    const first = Object.values(pages)[0];
+    const info = first?.imageinfo?.[0];
+    return info ? (info.thumburl || info.url || null) : null;
   } catch {
     return null; // si falla o tarda, seguimos sin imagen — nunca bloquea el análisis
   }
@@ -79,13 +95,14 @@ OTRAS REGLAS:
 - "sirve" es OBLIGATORIO y debe ser concreto: función principal + dónde/cómo se usa. Nunca lo dejes vago o genérico.
 - "uso_personal" y la sección de reventa deben ser claramente distintos — no mezclar ahorro doméstico con ganancia de reventa en el mismo texto.
 - imagen_query: 4-6 palabras en INGLÉS, describiendo el producto ARMADO o EN USO. Nunca "box" ni "packaging".
+- asin: si identificaste un ASIN o FNSKU confiable (empieza con B0... o X00...), inclúyelo tal cual aquí. Si no hay ASIN/FNSKU confirmado, usa null — NUNCA inventes uno.
 - uso_casos: exactamente 3, cada uno con un emoji distinto al inicio.
 - specs: 3-4 especificaciones clave y verificables, no relleno.
 - checklist: máximo 3 puntos, prácticos y verificables a simple vista en la tienda (recuerda BUG-B para consumibles).
 - Nada de explicaciones, saludos ni texto fuera del JSON.
 
 RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markdown, sin backticks:
-{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
+{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","asin":"B0XXXXXXXX o null","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -127,6 +144,12 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
 
     // MEJORA-2: buscar imagen real de referencia server-side (evita CORS del navegador)
     parsed.imagen_url = await buscarImagen(parsed.imagen_query);
+
+    // MEJORA-3: link directo a Amazon — al producto exacto si hay ASIN, o a una búsqueda si no
+    const asinValido = parsed.asin && /^(B0[A-Z0-9]{8}|X00[A-Z0-9]{6})$/i.test(parsed.asin);
+    parsed.amazon_url = asinValido
+      ? `https://www.amazon.com/dp/${parsed.asin}`
+      : `https://www.amazon.com/s?k=${encodeURIComponent(parsed.nombre || "")}`;
 
     return res.json(parsed);
 
