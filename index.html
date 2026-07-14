@@ -53,6 +53,7 @@
 
   .condensed-card{background:#fff;border-radius:18px;margin:-18px 14px 0;position:relative;padding:18px 16px 16px;box-shadow:0 4px 24px rgba(0,0,0,.08);}
   .condensed-name{font-size:19px;font-weight:800;line-height:1.25;margin-bottom:10px;}
+  .mejor-para-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;letter-spacing:0.5px;padding:5px 11px;border-radius:20px;margin-bottom:10px;}
   .condensed-prices{display:flex;align-items:center;gap:14px;margin-bottom:4px;}
   .cp-block{flex:1;}
   .cp-label{font-size:9px;color:#9A8070;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px;}
@@ -183,6 +184,7 @@
   </div>
 
   <div class="condensed-card">
+    <div class="mejor-para-badge" id="mejor-para-badge"></div>
     <div class="condensed-name" id="condensed-name"></div>
 
     <div class="condensed-prices">
@@ -216,6 +218,7 @@
 
       <div class="product-hero" id="hero-wrap">
         <img id="hero-img" src="" alt="" style="display:none;"/>
+        <div id="hero-img-badge" style="position:absolute;bottom:8px;left:8px;background:rgba(0,0,0,.6);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:6px;display:none;"></div>
         <div id="hero-no-img" class="hero-no-img" style="display:flex;">
           <span style="font-size:40px;">📦</span>
           <span style="font-size:12px;color:#9A8070;" id="hero-no-img-txt">Sin imagen de referencia</span>
@@ -450,6 +453,19 @@ function mostrarResultado(r) {
   document.getElementById("verdict-sub").textContent = SUBTXT[v] || "";
 
   // ── Tarjeta condensada ──
+  // ── BUG-009: badge claro de Reventa / Uso Personal / Ambos ──
+  const MEJOR_PARA_STYLE = {
+    "Reventa":      { bg:"#E3F2FD", color:"#0D47A1", ico:"💰" },
+    "Uso Personal": { bg:"#E8F5E9", color:"#1B5E20", ico:"🏠" },
+    "Ambos":        { bg:"#EDE7F6", color:"#4527A0", ico:"⭐" },
+  };
+  const mpBadge = document.getElementById("mejor-para-badge");
+  const mpVal = r.mejor_para || "Reventa";
+  const mpStyle = MEJOR_PARA_STYLE[mpVal] || MEJOR_PARA_STYLE["Reventa"];
+  mpBadge.style.background = mpStyle.bg;
+  mpBadge.style.color = mpStyle.color;
+  mpBadge.textContent = mpStyle.ico + " MEJOR PARA: " + mpVal.toUpperCase();
+
   document.getElementById("condensed-name").textContent = r.nombre || "Producto sin identificar";
   document.getElementById("cp-pagas").textContent = "$" + precio;
   document.getElementById("cp-amazon").textContent = r.valor_amazon || "—";
@@ -465,22 +481,36 @@ function mostrarResultado(r) {
     condCheck.innerHTML += `<div class="cc-item"><div class="cc-dot" style="background:${col.soft};border:2px solid ${col.bg}"></div><div>${item}</div></div>`;
   });
 
-  // ── MEJORA-3: botón Ver en Amazon (producto exacto si hay ASIN, búsqueda si no) ──
-  document.getElementById("amazon-btn").href = r.amazon_url || ("https://www.amazon.com/s?k=" + encodeURIComponent(r.nombre || ""));
-
-  // ── Imagen real de referencia (buscada server-side, ver MEJORA-2) ──
+  // ── Imagen real de referencia ──
+  // 1) Si Wikimedia encontró una foto de stock del producto, se usa esa.
+  // 2) Si no, usamos la FOTO PROPIA que el usuario acaba de tomar, PERO solo si la IA
+  //    confirma que la foto muestra el producto real (no un código de barras o caja cerrada).
   const heroImg = document.getElementById("hero-img");
   const heroNI  = document.getElementById("hero-no-img");
-  if (r.imagen_url) {
-    heroImg.src = r.imagen_url;
+  const heroBadge = document.getElementById("hero-img-badge");
+  const propiaEsUtil = r.foto_muestra_producto === true && imagenPreview;
+  const imagenFallback = r.imagen_url || (propiaEsUtil ? imagenPreview : null);
+  if (imagenFallback) {
+    heroImg.src = imagenFallback;
     heroImg.style.display = "block";
     heroNI.style.display = "none";
-    heroImg.onerror = () => { heroImg.style.display = "none"; heroNI.style.display = "flex"; };
+    heroBadge.style.display = "block";
+    heroBadge.textContent = r.imagen_url ? "📷 Foto de referencia" : "📸 Tu foto";
+    heroImg.onerror = () => {
+      if (heroImg.src !== imagenPreview && propiaEsUtil) { heroImg.src = imagenPreview; heroBadge.textContent = "📸 Tu foto"; }
+      else { heroImg.style.display = "none"; heroNI.style.display = "flex"; heroBadge.style.display = "none"; }
+    };
   } else {
     heroImg.style.display = "none";
     heroNI.style.display = "flex";
-    document.getElementById("hero-no-img-txt").textContent = r.nombre ? "Referencia: " + r.nombre : "Sin imagen de referencia";
+    heroBadge.style.display = "none";
+    document.getElementById("hero-no-img-txt").textContent = r.nombre ? "Sin foto clara — mira \"Ver en Amazon\" 👆" : "Sin imagen de referencia";
   }
+
+  // ── MEJORA-3: botón Ver en Amazon (más prominente si no hay imagen visual) ──
+  const amazonBtn = document.getElementById("amazon-btn");
+  amazonBtn.href = r.amazon_url || ("https://www.amazon.com/s?k=" + encodeURIComponent(r.nombre || ""));
+  amazonBtn.textContent = imagenFallback ? "🛒 Ver en Amazon" : "🛒 Ver fotos reales en Amazon";
 
   const pillsEl = document.getElementById("pills");
   pillsEl.innerHTML = "";
