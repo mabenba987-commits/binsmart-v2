@@ -72,4 +72,509 @@
   .full-details.open{max-height:none;opacity:1;animation:expandIn .4s ease;}
   .full-inner{padding:14px 14px 0;}
 
-  .product-hero{position:relative;width:100%;height:180px;background:#EDE8E0;overflow:hidden;border-radius:14px;margin-bot
+  .product-hero{position:relative;width:100%;height:180px;background:#EDE8E0;overflow:hidden;border-radius:14px;margin-bottom:12px;}
+  .product-hero img{width:100%;height:100%;object-fit:cover;}
+  .hero-no-img{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+  .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+  .pill{border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;}
+  .product-model{font-size:11px;color:#9A8070;margin-bottom:8px;}
+  .verdict-reason{border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;line-height:1.5;}
+  .product-desc{font-size:14px;color:#4A4A4A;line-height:1.7;margin-bottom:12px;}
+  .other-prices{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+  .other-price{border-radius:8px;padding:5px 11px;font-size:12px;}
+  .sec-card{background:#fff;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 12px rgba(0,0,0,.05);border:1px solid #EAE4DA;}
+  .sec-title{display:flex;align-items:center;gap:7px;margin-bottom:12px;}
+  .sec-ico{font-size:15px;}
+  .sec-label{font-size:10px;font-weight:700;color:#9A8070;letter-spacing:2px;text-transform:uppercase;}
+  .uso-item{display:flex;align-items:center;gap:10px;background:#F8F6F2;border-radius:10px;padding:11px 12px;border:1px solid #EAE4DA;margin-bottom:8px;}
+  .uso-ico{font-size:20px;flex-shrink:0;}
+  .uso-txt{font-size:13px;color:#2A2A2A;line-height:1.3;}
+  .specs-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .spec-item{background:#F8F6F2;border-radius:10px;padding:10px 11px;border:1px solid #EAE4DA;}
+  .spec-key{font-size:9px;color:#9A8070;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+  .spec-val{font-size:13px;font-weight:700;color:#1A1A1A;}
+  .metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+  .metric{background:#F8F6F2;border-radius:10px;padding:11px;}
+  .metric-label{font-size:9px;color:#9A8070;letter-spacing:2px;text-transform:uppercase;margin-bottom:3px;}
+  .metric-val{font-weight:800;word-break:break-word;}
+  .personal-box{background:#E8F5E9;border-radius:10px;padding:12px;border:1px solid #C8E6C9;font-size:14px;color:#1B4D1B;line-height:1.6;}
+  .conf-bar-bg{height:9px;background:#E8E0D4;border-radius:5px;overflow:hidden;}
+  .conf-bar{height:100%;border-radius:5px;transition:width 1s ease;}
+  .conf-warn{margin-top:10px;background:#FFF3E0;border-radius:8px;padding:10px 12px;border:1px solid #FFE0B2;font-size:12px;color:#BF360C;line-height:1.5;}
+  .new-scan{width:100%;padding:20px;border-radius:14px;background:linear-gradient(135deg,#2E7D32,#1B5E20);color:#fff;font-weight:800;font-size:16px;box-shadow:0 6px 24px rgba(27,94,32,.35);margin-top:14px;}
+  .footer{text-align:center;font-size:11px;color:#C0B4A0;margin-top:14px;font-style:italic;padding-bottom:20px;}
+
+  /* Error */
+  #screen-error{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;padding:0 32px;text-align:center;gap:16px;}
+  #screen-error.active{display:flex;}
+  .error-box{font-size:13px;color:#6A5A4A;max-width:320px;line-height:1.7;background:#fff;padding:16px 20px;border-radius:14px;border:1px solid #DDD5C8;word-break:break-word;}
+  .retry-btn{padding:16px 40px;border-radius:12px;background:#2E7D32;color:#fff;font-weight:700;font-size:15px;box-shadow:0 4px 16px rgba(27,94,32,.3);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<!-- ══ INICIO ══ -->
+<div id="screen-inicio" class="page">
+  <div style="padding-top:44px;text-align:center;margin-bottom:28px;">
+    <div style="display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:16px;padding:10px 22px;box-shadow:0 2px 16px rgba(0,0,0,.08);border:1px solid #E8E2D8;">
+      <span style="font-size:22px;">🛒</span>
+      <span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">Bin</span>
+      <span style="font-size:24px;font-weight:800;letter-spacing:-0.5px;color:#1B5E20;">Smart</span>
+    </div>
+    <div style="font-size:13px;color:#9A8A70;margin-top:10px;">Fotografía · Analiza · Decide</div>
+  </div>
+
+  <!-- Precio -->
+  <div class="card">
+    <div class="step-label"><span class="step-n">1</span><span class="step-txt">Precio del bin hoy</span></div>
+    <div class="price-grid" id="price-grid"></div>
+  </div>
+
+  <!-- Foto -->
+  <div class="card">
+    <div class="step-label"><span class="step-n">2</span><span class="step-txt">Foto del producto</span></div>
+    <div id="photo-btns" class="photo-btns">
+      <input id="input-cam" type="file" accept="image/*" capture="environment" style="display:none"/>
+      <input id="input-gal" type="file" accept="image/*" style="display:none"/>
+      <button class="photo-btn" onclick="document.getElementById('input-cam').click()">
+        <span class="ico">📷</span><span class="lbl">Cámara</span>
+      </button>
+      <button class="photo-btn" onclick="document.getElementById('input-gal').click()">
+        <span class="ico">🖼️</span><span class="lbl">Galería</span>
+      </button>
+    </div>
+    <div id="photo-preview" class="preview-wrap" style="display:none;">
+      <img id="preview-img" src="" alt=""/>
+      <div class="preview-overlay"></div>
+      <button class="preview-remove" onclick="removePhoto()">✕</button>
+      <div class="preview-badge">✓ LISTA</div>
+    </div>
+  </div>
+
+  <!-- Tips -->
+  <div class="tips">
+    <div class="tips-title">💡 PUEDES ENVIAR FOTO DE:</div>
+    <div class="tip-item"><span class="tip-check">✓</span> Etiqueta Amazon (FNSKU/ASIN — máxima precisión)</div>
+    <div class="tip-item"><span class="tip-check">✓</span> Caja cerrada o abierta del producto</div>
+    <div class="tip-item"><span class="tip-check">✓</span> Producto fuera de la caja o ya armado</div>
+    <div class="tip-item"><span class="tip-check">✓</span> Combinación de varias fotos</div>
+  </div>
+
+  <button id="analyze-btn" class="main-btn disabled" onclick="analizar()">① Elige el precio del bin</button>
+</div>
+
+<!-- ══ ANALIZANDO ══ -->
+<div id="screen-analyzing">
+  <img id="analyzing-img" src="" alt="" style="width:100%;max-height:190px;object-fit:cover;border-radius:16px;filter:brightness(.5) saturate(.5);box-shadow:0 8px 32px rgba(0,0,0,.15);display:none;"/>
+  <div class="spinner"></div>
+  <div style="font-size:14px;font-weight:700;color:#1B5E20;">Analizando producto...</div>
+  <div style="font-size:12px;color:#9A8070;text-align:center;line-height:2;">Identificando · Valorando · Decidiendo</div>
+</div>
+
+<!-- ══ RESULTADO — CONDENSADO PRIMERO ══ -->
+<div id="screen-result">
+
+  <div class="verdict-hero" id="verdict-hero">
+    <div class="verdict-emoji" id="verdict-emoji"></div>
+    <div class="verdict-word" id="verdict-word"></div>
+    <div class="verdict-sub" id="verdict-sub"></div>
+  </div>
+
+  <div class="condensed-card">
+    <div class="condensed-name" id="condensed-name"></div>
+
+    <div class="condensed-prices">
+      <div class="cp-block">
+        <div class="cp-label">Tú pagas</div>
+        <div class="cp-val" id="cp-pagas" style="color:#1A1A1A;"></div>
+      </div>
+      <div class="cp-divider"></div>
+      <div class="cp-block">
+        <div class="cp-label">Vale en Amazon</div>
+        <div class="cp-val" id="cp-amazon" style="color:#B12704;"></div>
+      </div>
+    </div>
+    <div class="condensed-gain" id="condensed-gain"></div>
+
+    <div class="condensed-checklist">
+      <div class="condensed-check-title">🔍 Revisa antes de pagar</div>
+      <div id="condensed-check-items"></div>
+    </div>
+
+    <button class="expand-btn" id="expand-btn" onclick="toggleDetalle()">
+      <span id="expand-label">Ver análisis completo</span>
+      <span class="chev">▾</span>
+    </button>
+  </div>
+
+  <div class="full-details" id="full-details">
+    <div class="full-inner">
+
+      <div class="product-hero" id="hero-wrap">
+        <img id="hero-img" src="" alt="" style="display:none;"/>
+        <div id="hero-no-img" class="hero-no-img" style="display:flex;">
+          <span style="font-size:40px;">📦</span>
+          <span style="font-size:12px;color:#9A8070;" id="hero-no-img-txt">Sin imagen de referencia</span>
+        </div>
+      </div>
+
+      <div class="pills" id="pills"></div>
+      <div class="product-model" id="product-model"></div>
+      <div class="verdict-reason" id="verdict-reason"></div>
+      <div class="product-desc" id="product-desc"></div>
+      <div class="other-prices" id="other-prices"></div>
+
+      <!-- Casos de uso -->
+      <div class="sec-card" id="sec-usos" style="display:none;">
+        <div class="sec-title"><span class="sec-ico">💡</span><span class="sec-label">¿Para qué sirve?</span></div>
+        <div id="uso-items"></div>
+      </div>
+
+      <!-- Specs -->
+      <div class="sec-card" id="sec-specs" style="display:none;">
+        <div class="sec-title"><span class="sec-ico">📋</span><span class="sec-label">Especificaciones</span></div>
+        <div class="specs-grid" id="specs-grid"></div>
+      </div>
+
+      <!-- Reventa -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · Miami</span></div>
+        <div class="metrics-grid">
+          <div class="metric"><div class="metric-label">Vender a</div><div class="metric-val" id="m-precio" style="font-size:17px;color:#B12704;"></div></div>
+          <div class="metric"><div class="metric-label">Ganancia est.</div><div class="metric-val" id="m-ganancia" style="font-size:17px;color:#2E7D32;"></div></div>
+          <div class="metric"><div class="metric-label">Canal #1</div><div class="metric-val" id="m-canal" style="font-size:14px;color:#1565C0;"></div></div>
+          <div class="metric" id="m-demanda-box"><div class="metric-label">Demanda local</div><div class="metric-val" id="m-demanda" style="font-size:14px;"></div></div>
+        </div>
+        <div style="font-size:12px;color:#9A8070;text-align:center;" id="m-canal2"></div>
+      </div>
+
+      <!-- Uso personal -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">🏠</span><span class="sec-label">Uso Personal</span></div>
+        <div class="personal-box" id="uso-personal"></div>
+      </div>
+
+      <!-- Confianza -->
+      <div class="sec-card">
+        <div class="sec-title"><span class="sec-ico">📊</span><span class="sec-label">Confianza de Identificación</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <span style="font-size:13px;color:#6A5A4A;" id="conf-label"></span>
+          <span style="font-size:22px;font-weight:900;" id="conf-pct"></span>
+        </div>
+        <div class="conf-bar-bg"><div class="conf-bar" id="conf-bar"></div></div>
+        <div class="conf-warn" id="conf-warn" style="display:none;"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div style="padding:0 14px;">
+    <button class="new-scan" onclick="reiniciar()">⚡ NUEVO ESCANEO</button>
+    <div class="footer">Miami · Bin Stores · Liquidación · Reventa Local</div>
+  </div>
+</div>
+
+<!-- ══ ERROR ══ -->
+<div id="screen-error">
+  <div style="font-size:52px;">⚠️</div>
+  <div style="font-size:20px;font-weight:800;">Error de análisis</div>
+  <div class="error-box" id="error-msg"></div>
+  <button class="retry-btn" onclick="reiniciar()">Intentar de nuevo</button>
+</div>
+
+<script>
+// ── Estado ──────────────────────────────────────────────────────
+let precio = null;
+let imagenB64 = null;
+let imagenPreview = null;
+
+// ── Precios ──────────────────────────────────────────────────────
+const PRECIOS = [1,2,4,6,8,12,16];
+const grid = document.getElementById("price-grid");
+PRECIOS.forEach(p => {
+  const btn = document.createElement("button");
+  btn.className = "price-btn";
+  btn.textContent = "$" + p;
+  btn.onclick = () => {
+    precio = p;
+    document.querySelectorAll(".price-btn").forEach(b => b.classList.remove("sel"));
+    btn.classList.add("sel");
+    updateBtn();
+  };
+  grid.appendChild(btn);
+});
+
+// ── Foto ─────────────────────────────────────────────────────────
+function setupInput(id) {
+  document.getElementById(id).addEventListener("change", function(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    comprimir(file).then(res => {
+      imagenB64 = res.b64;
+      imagenPreview = res.preview;
+      document.getElementById("photo-btns").style.display = "none";
+      const wrap = document.getElementById("photo-preview");
+      wrap.style.display = "block";
+      document.getElementById("preview-img").src = res.preview;
+      updateBtn();
+      // MEJORA-1: si el precio ya está elegido, analizar automáticamente sin esperar el botón
+      if (precio) analizar();
+    }).catch(err => mostrarError(err.message));
+  });
+}
+setupInput("input-cam");
+setupInput("input-gal");
+
+function removePhoto() {
+  imagenB64 = null; imagenPreview = null;
+  document.getElementById("photo-btns").style.display = "flex";
+  document.getElementById("photo-preview").style.display = "none";
+  document.getElementById("input-cam").value = "";
+  document.getElementById("input-gal").value = "";
+  updateBtn();
+}
+
+function updateBtn() {
+  const btn = document.getElementById("analyze-btn");
+  if (!precio) { btn.textContent = "① Elige el precio del bin"; btn.className = "main-btn disabled"; }
+  else if (!imagenB64) { btn.textContent = "② Toma o sube una foto"; btn.className = "main-btn disabled"; }
+  else { btn.textContent = "⚡ ANALIZAR PRODUCTO"; btn.className = "main-btn active"; }
+}
+
+// ── Compresión ───────────────────────────────────────────────────
+function comprimir(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo"));
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Imagen no válida"));
+      img.onload = () => {
+        function resize(maxDim, q) {
+          const c = document.createElement("canvas");
+          let w = img.width, h = img.height;
+          if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+          else { w = Math.round(w * maxDim / h); h = maxDim; }
+          c.width = w; c.height = h;
+          c.getContext("2d").drawImage(img, 0, 0, w, h);
+          return c.toDataURL("image/jpeg", q);
+        }
+        let d = resize(800, 0.7), q = 0.7;
+        while (d.length > 190000 && q > 0.25) { q -= 0.1; d = resize(800, q); }
+        if (d.length > 190000) { q = 0.65; d = resize(500, q); while (d.length > 190000 && q > 0.2) { q -= 0.1; d = resize(500, q); } }
+        if (d.length > 190000) d = resize(350, 0.55);
+        resolve({ preview: d, b64: d.split(",")[1] });
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Pantallas ─────────────────────────────────────────────────────
+function show(id) {
+  ["screen-inicio","screen-analyzing","screen-result","screen-error"].forEach(s => {
+    const el = document.getElementById(s);
+    el.classList.remove("active");
+    el.style.display = "";
+  });
+  const target = document.getElementById(id);
+  if (id === "screen-analyzing" || id === "screen-error") {
+    target.style.display = "flex"; target.classList.add("active");
+  } else {
+    target.style.display = id === "screen-result" ? "block" : "flex";
+    target.classList.add("active");
+  }
+  window.scrollTo(0,0);
+}
+
+// ── Analizar ──────────────────────────────────────────────────────
+async function analizar() {
+  if (!imagenB64 || !precio) return;
+  const aImg = document.getElementById("analyzing-img");
+  aImg.src = imagenPreview; aImg.style.display = "block";
+  show("screen-analyzing");
+
+  try {
+    const res = await fetch("/api/analyze", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ b64: imagenB64, precio })
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.error || "Error del servidor " + res.status);
+    }
+    const data = await res.json();
+    mostrarResultado(data);
+  } catch(e) {
+    mostrarError(e.message || "Error desconocido");
+  }
+}
+
+// ── Mostrar resultado ─────────────────────────────────────────────
+const COLORES = {
+  COMPRAR:{bg:"#1B5E20",bgGrad:"linear-gradient(135deg,#2E7D32,#1B5E20)",soft:"#E8F5E9",pill:"#C8E6C9",dark:"#1B5E20"},
+  REVISAR:{bg:"#E65100",bgGrad:"linear-gradient(135deg,#F57C00,#E65100)",soft:"#FFF3E0",pill:"#FFE0B2",dark:"#BF360C"},
+  PASAR:  {bg:"#B71C1C",bgGrad:"linear-gradient(135deg,#D32F2F,#B71C1C)",soft:"#FFEBEE",pill:"#FFCDD2",dark:"#7F0000"},
+};
+const EMOJI = {COMPRAR:"🟢",REVISAR:"🟡",PASAR:"🔴"};
+const SUBTXT = {COMPRAR:"Buena oportunidad",REVISAR:"Verifica antes de pagar",PASAR:"No vale la pena"};
+const DMD_C = {Alta:"#1B5E20",Media:"#E65100",Baja:"#B71C1C"};
+const DMD_BG= {Alta:"#E8F5E9",Media:"#FFF3E0",Baja:"#FFEBEE"};
+
+let detalleAbierto = false;
+
+function mostrarResultado(r) {
+  const v   = r.veredicto || "PASAR";
+  const col = COLORES[v] || COLORES.PASAR;
+  const pct = Math.min(100, Math.max(0, r.confianza || 0));
+  const em  = EMOJI[v] || "🔴";
+
+  // Reset expand state
+  detalleAbierto = false;
+  document.getElementById("full-details").classList.remove("open");
+  document.getElementById("expand-btn").classList.remove("open");
+  document.getElementById("expand-label").textContent = "Ver análisis completo";
+
+  // ── Hero de veredicto (condensado) ──
+  document.getElementById("verdict-hero").style.background = col.bgGrad;
+  document.getElementById("verdict-emoji").textContent = em;
+  document.getElementById("verdict-word").textContent = v;
+  document.getElementById("verdict-sub").textContent = SUBTXT[v] || "";
+
+  // ── Tarjeta condensada ──
+  document.getElementById("condensed-name").textContent = r.nombre || "Producto sin identificar";
+  document.getElementById("cp-pagas").textContent = "$" + precio;
+  document.getElementById("cp-amazon").textContent = r.valor_amazon || "—";
+
+  const gainEl = document.getElementById("condensed-gain");
+  gainEl.style.background = col.soft;
+  gainEl.style.color = col.dark;
+  gainEl.textContent = "💰 Ganancia: " + (r.ganancia_estimada || "—");
+
+  const condCheck = document.getElementById("condensed-check-items");
+  condCheck.innerHTML = "";
+  (r.checklist || []).slice(0,3).forEach(item => {
+    condCheck.innerHTML += `<div class="cc-item"><div class="cc-dot" style="background:${col.soft};border:2px solid ${col.bg}"></div><div>${item}</div></div>`;
+  });
+
+  // ── Imagen real de referencia (buscada server-side, ver MEJORA-2) ──
+  const heroImg = document.getElementById("hero-img");
+  const heroNI  = document.getElementById("hero-no-img");
+  if (r.imagen_url) {
+    heroImg.src = r.imagen_url;
+    heroImg.style.display = "block";
+    heroNI.style.display = "none";
+    heroImg.onerror = () => { heroImg.style.display = "none"; heroNI.style.display = "flex"; };
+  } else {
+    heroImg.style.display = "none";
+    heroNI.style.display = "flex";
+    document.getElementById("hero-no-img-txt").textContent = r.nombre ? "Referencia: " + r.nombre : "Sin imagen de referencia";
+  }
+
+  const pillsEl = document.getElementById("pills");
+  pillsEl.innerHTML = "";
+  if (r.categoria) pillsEl.innerHTML += `<span class="pill" style="background:#E8F5E9;color:#1B5E20">${r.categoria}</span>`;
+  if (r.condicion_detectada && r.condicion_detectada !== "Sin determinar")
+    pillsEl.innerHTML += `<span class="pill" style="background:#FFF3E0;color:#E65100">${r.condicion_detectada}</span>`;
+  if (r.marca && r.marca !== "Genérico/OEM")
+    pillsEl.innerHTML += `<span class="pill" style="background:#EDE7F6;color:#4527A0">${r.marca}</span>`;
+
+  const modelEl = document.getElementById("product-model");
+  modelEl.textContent = r.modelo ? "Modelo: " + r.modelo : "";
+  modelEl.style.display = r.modelo ? "block" : "none";
+
+  const vrEl = document.getElementById("verdict-reason");
+  vrEl.style.background = col.soft; vrEl.style.border = "1px solid " + col.pill; vrEl.style.color = col.dark;
+  vrEl.innerHTML = `<strong>${em} ${v}:</strong> ${r.razon || ""}`;
+
+  document.getElementById("product-desc").textContent = r.sirve || "";
+
+  const op = document.getElementById("other-prices"); op.innerHTML = "";
+  if (r.valor_walmart) op.innerHTML += `<div class="other-price" style="background:#E3F2FD"><span style="color:#1565C0;font-weight:700">Walmart: </span><span style="color:#0D47A1;font-weight:800">${r.valor_walmart}</span></div>`;
+  if (r.valor_ebay)    op.innerHTML += `<div class="other-price" style="background:#EDE7F6"><span style="color:#4527A0;font-weight:700">eBay: </span><span style="color:#311B92;font-weight:800">${r.valor_ebay}</span></div>`;
+
+  const usoSec = document.getElementById("sec-usos");
+  const usoItems = document.getElementById("uso-items");
+  if (r.uso_casos?.length) {
+    usoSec.style.display = "block"; usoItems.innerHTML = "";
+    r.uso_casos.forEach(c => {
+      const ico = c.match(/^\p{Emoji}/u)?.[0] || "•";
+      const txt = c.replace(/^\p{Emoji}\s*/u, "");
+      usoItems.innerHTML += `<div class="uso-item"><span class="uso-ico">${ico}</span><span class="uso-txt">${txt}</span></div>`;
+    });
+  } else { usoSec.style.display = "none"; }
+
+  const specSec = document.getElementById("sec-specs");
+  const specGrid = document.getElementById("specs-grid");
+  if (r.specs?.length) {
+    specSec.style.display = "block"; specGrid.innerHTML = "";
+    r.specs.forEach(s => {
+      const parts = s.split(":");
+      const k = parts.length > 1 ? parts[0] : "";
+      const v2 = parts.length > 1 ? parts.slice(1).join(":").trim() : s;
+      specGrid.innerHTML += `<div class="spec-item">${k?`<div class="spec-key">${k}</div>`:""}` +
+        `<div class="spec-val">${v2}</div></div>`;
+    });
+  } else { specSec.style.display = "none"; }
+
+  document.getElementById("m-precio").textContent = r.precio_reventa || "—";
+  document.getElementById("m-ganancia").textContent = r.ganancia_estimada || "—";
+  document.getElementById("m-canal").textContent = r.canal_principal || "—";
+  const dmd = document.getElementById("m-demanda");
+  dmd.textContent = r.demanda_local || "—";
+  dmd.style.color = DMD_C[r.demanda_local] || "#1A1A1A";
+  document.getElementById("m-demanda-box").style.background = DMD_BG[r.demanda_local] || "#F8F6F2";
+  const c2 = document.getElementById("m-canal2");
+  c2.innerHTML = r.canal_secundario ? `Secundario: <strong style="color:#4A4A4A">${r.canal_secundario}</strong>` : "";
+
+  document.getElementById("uso-personal").textContent = r.uso_personal || "—";
+
+  const confLabel = pct>=85?"Identificación confiable":pct>=70?"Identificación aceptable":"Verificar antes de pagar";
+  document.getElementById("conf-label").textContent = confLabel;
+  const confPct = document.getElementById("conf-pct");
+  confPct.textContent = pct + "%";
+  confPct.style.color = pct>=70?"#1B5E20":pct>=50?"#E65100":"#B71C1C";
+  const bar = document.getElementById("conf-bar");
+  bar.style.width = pct + "%";
+  bar.style.background = pct>=70?"linear-gradient(90deg,#2E7D32,#43A047)":pct>=50?"linear-gradient(90deg,#E65100,#FB8C00)":"linear-gradient(90deg,#B71C1C,#E53935)";
+  const warn = document.getElementById("conf-warn");
+  if (pct < 70) { warn.style.display="block"; warn.textContent="⚠️ Confianza baja — busca el FNSKU o ASIN en la etiqueta para mayor precisión."; }
+  else { warn.style.display="none"; }
+
+  show("screen-result");
+}
+
+function toggleDetalle() {
+  detalleAbierto = !detalleAbierto;
+  const det = document.getElementById("full-details");
+  const btn = document.getElementById("expand-btn");
+  const lbl = document.getElementById("expand-label");
+  if (detalleAbierto) {
+    det.classList.add("open"); btn.classList.add("open");
+    lbl.textContent = "Ocultar análisis completo";
+    setTimeout(() => det.scrollIntoView({behavior:"smooth", block:"start"}), 80);
+  } else {
+    det.classList.remove("open"); btn.classList.remove("open");
+    lbl.textContent = "Ver análisis completo";
+  }
+}
+
+function mostrarError(msg) {
+  document.getElementById("error-msg").textContent = msg || "Error desconocido";
+  show("screen-error");
+}
+
+function reiniciar() {
+  precio = null; imagenB64 = null; imagenPreview = null;
+  document.querySelectorAll(".price-btn").forEach(b => b.classList.remove("sel"));
+  removePhoto();
+  show("screen-inicio");
+}
+
+// Iniciar en pantalla de inicio
+show("screen-inicio");
+</script>
+</body>
+</html>
