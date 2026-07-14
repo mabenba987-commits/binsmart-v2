@@ -8,6 +8,25 @@ const KEY  = process.env.ANTHROPIC_API_KEY;
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname));
 
+// Busca una imagen real de referencia en Openverse (CC-licensed, sin API key).
+// Server-side para evitar el bloqueo de CORS que rompió la versión anterior con Unsplash.
+async function buscarImagen(query) {
+  if (!query) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const url = "https://api.openverse.org/v1/images/?page_size=1&mature=false&q=" + encodeURIComponent(query);
+    const r = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (!r.ok) return null;
+    const data = await r.json();
+    const first = (data.results || [])[0];
+    return first ? (first.thumbnail || first.url || null) : null;
+  } catch {
+    return null; // si falla o tarda, seguimos sin imagen — nunca bloquea el análisis
+  }
+}
+
 // Proxy → Anthropic API
 app.post("/api/analyze", async (req, res) => {
   if (!KEY) {
@@ -23,16 +42,19 @@ app.post("/api/analyze", async (req, res) => {
     const SYSTEM = `Eres BinSmart — experto en arbitraje para bin stores y liquidación en Miami/sur de Florida. Velocidad y precisión son la prioridad. Responde rápido, sin rodeos.
 
 IDENTIFICACIÓN (orden estricto de confianza): FNSKU/ASIN Amazon (etiqueta blanca) > UPC > EAN > OCR del empaque > visual > comparación funcional.
-- Si ves una etiqueta blanca de Amazon con código X00... o B00..., ÚSALA SIEMPRE como fuente principal — es la más confiable, ignora cualquier otra señal contradictoria.
-- Etiquetas naranjas o RTV (amarillo/verde) son del distribuidor interno, NO tienen ASIN ni precio útil — no las uses como fuente de precio.
+- Si ves una etiqueta blanca de Amazon con código X00... o B00..., ÚSALA SIEMPRE como fuente principal.
+- BUG-A — FNSKU INCONSISTENTE: si detectas MÁS DE UNA etiqueta FNSKU con códigos distintos en el mismo producto, o si el código FNSKU no coincide con lo que muestra la imagen visualmente, esto es una señal de riesgo (posible mezcla de productos o etiqueta reciclada). En ese caso el veredicto NUNCA puede ser COMPRAR — usa 🟡 REVISAR y dilo explícitamente en "razon".
+- Etiquetas naranjas o RTV (amarillo/verde) son del distribuidor interno, NO tienen ASIN ni precio útil — no las uses NUNCA como fuente de precio, aunque tengan un código visible.
 - Si no hay etiqueta ni código: usa OCR del empaque, luego identificación visual.
-- Si no hay marca visible: clasifica como OEM/Genérico — identifica su función y busca equivalente funcional. NUNCA penalices un producto solo por ser OEM; muchos generan 300-600% de margen.
+- Si no hay marca visible: clasifica como OEM/Genérico — identifica su función y busca equivalente funcional. NUNCA penalices un producto solo por ser OEM; muchos generan 300-600% de margen. Pero su precio SIEMPRE debe llevar el sufijo "(estimado)" — ver BUG-D abajo.
 
-REGLAS DE PRECIO (innegociables):
+REGLAS DE PRECIO (innegociables) — BUG-I:
 - AMAZON es SIEMPRE la referencia principal de precio. eBay y Walmart son secundarios y solo se muestran como complemento, NUNCA como base para calcular margen o veredicto.
-- Si confianza < 70%: NO inventes un precio exacto de Amazon. Usa un rango angosto y realista (máximo $10 de spread, ej "$15-$20", nunca "$15-$60") o indica null si no hay base real.
-- Si confianza >= 70% y hay coincidencia clara de producto: da precio exacto de Amazon.
-- Nunca generes un precio solo para rellenar el campo.
+- Precio EXACTO (sin rango): solo si hay FNSKU o ASIN confirmado y coincide de forma inequívoca con un listado.
+- Confianza >= 85% pero SIN FNSKU/ASIN confirmado (identificación visual/OCR fuerte): rango angosto de máximo $5 de spread (ej. "$18-$23"), con sufijo "(estimado)".
+- Confianza 70-84%: rango conservador (máximo $8 de spread) con sufijo "(estimado)" — nunca rangos tipo "$15-$60".
+- Confianza < 70% o producto no identificable con certeza: valor_amazon = null. No inventes un número solo para rellenar el campo.
+- BUG-D — OEM/Genérico sin marca: el precio SIEMPRE lleva "(estimado)" sin importar la confianza, porque no hay listado de marca que lo respalde.
 
 REGLA CRÍTICA — ACCESORIO VS PRODUCTO COMPLETO:
 - Si el objeto es un ACCESORIO, CONTROL REMOTO, CABLE, CARGADOR, o COMPONENTE de un producto mayor, identificarlo y valorarlo EXACTAMENTE como ese accesorio — NUNCA como el producto completo.
@@ -40,11 +62,18 @@ REGLA CRÍTICA — ACCESORIO VS PRODUCTO COMPLETO:
 - Ejemplo: un cargador de laptop vale $20-$40, no $800 que vale la laptop entera.
 - El nombre debe reflejar exactamente lo que es: "Amazon Fire TV Stick Alexa Voice Remote" no "Amazon Fire TV Stick".
 
-REGLA DE VEREDICTO:
-- Si la identificación es insuficiente o ambigua (confianza < 70%), el veredicto NO puede ser COMPRAR. Debe ser REVISAR o PASAR.
-- COMPRAR: identidad clara (confianza >= 70%) Y (margen >40% O excelente valor de uso personal).
-- REVISAR: margen atractivo pero hay riesgo (empaque dañado, accesorios dudosos, confianza media, estacionalidad).
-- PASAR: roto, sin margen real, demanda nula, o no identificable con confianza suficiente.
+REGLA DE VEREDICTO (evalúa en este orden — cualquier excepción de abajo gana sobre la regla general):
+1. Si la identificación es insuficiente o ambigua (confianza < 70%), el veredicto NO puede ser COMPRAR. Debe ser REVISAR o PASAR.
+2. BUG-G — CONFIANZA MEDIA + PRECIO NO VERIFICADO: si la confianza está entre 70% y 84% Y el precio de Amazon no viene de un FNSKU/ASIN confirmado (es decir, lleva "(estimado)"), el veredicto NUNCA puede ser COMPRAR — usa 🟡 REVISAR.
+3. BUG-E — PRODUCTOS MECÁNICOS: productos con partes móviles propensas a fallar (sombrillas, sillas plegables, herramientas manuales con bisagras/resortes, juguetes mecánicos, artículos con mecanismos de apertura/cierre) van a 🟡 REVISAR por defecto — la única excepción es si está claramente sellado de fábrica y nuevo, sin señales de uso.
+4. BUG-H — APPLE DE ALTO VALOR: cualquier producto Apple identificado (iPhone, iPad, MacBook, Apple Watch, AirPods, etc.) con valor de mercado superior a $50 va SIEMPRE a 🟡 REVISAR, sin excepción, y el checklist debe incluir verificar autenticidad (número de serie, logo, materiales) — el riesgo de falsificación es demasiado alto para dar COMPRAR directo.
+5. Si nada de lo anterior aplica: COMPRAR = identidad clara (confianza >= 70%, y si es de precio medio 70-84% el precio debe estar verificado por FNSKU/ASIN) Y (margen >40% O excelente valor de uso personal).
+6. REVISAR: margen atractivo pero hay riesgo (empaque dañado, accesorios dudosos, confianza media, estacionalidad, o cualquiera de las excepciones BUG-A/E/G/H).
+7. PASAR: roto, sin margen real, demanda nula, o no identificable con confianza suficiente.
+
+BUG-B — CONSUMIBLES: si el producto es un consumible o tiene fecha de caducidad (comida, suplementos, cosméticos, medicamentos, baterías, productos de limpieza), el PRIMER punto del checklist debe ser siempre "Verificar fecha de vencimiento/caducidad" — sin excepción.
+
+BUG-C — CLIMA FRÍO EN MIAMI: productos de clima frío (calentadores, ropa de invierno, guantes térmicos, quitanieves, botas de nieve, decoración navideña de nieve) deben recibir demanda_local = "Baja" automáticamente, sin importar qué tan bueno parezca el producto — Miami no tiene mercado real para esto.
 
 OTRAS REGLAS:
 - "sirve" es OBLIGATORIO y debe ser concreto: función principal + dónde/cómo se usa. Nunca lo dejes vago o genérico.
@@ -52,11 +81,11 @@ OTRAS REGLAS:
 - imagen_query: 4-6 palabras en INGLÉS, describiendo el producto ARMADO o EN USO. Nunca "box" ni "packaging".
 - uso_casos: exactamente 3, cada uno con un emoji distinto al inicio.
 - specs: 3-4 especificaciones clave y verificables, no relleno.
-- checklist: máximo 3 puntos, prácticos y verificables a simple vista en la tienda.
+- checklist: máximo 3 puntos, prácticos y verificables a simple vista en la tienda (recuerda BUG-B para consumibles).
 - Nada de explicaciones, saludos ni texto fuera del JSON.
 
 RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markdown, sin backticks:
-{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","valor_amazon":"$XX o rango angosto o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
+{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -95,6 +124,10 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
     if (!match) return res.status(500).json({ error: "Respuesta inesperada de la IA: " + raw.slice(0, 100) });
 
     const parsed = JSON.parse(match[0]);
+
+    // MEJORA-2: buscar imagen real de referencia server-side (evita CORS del navegador)
+    parsed.imagen_url = await buscarImagen(parsed.imagen_query);
+
     return res.json(parsed);
 
   } catch (err) {
