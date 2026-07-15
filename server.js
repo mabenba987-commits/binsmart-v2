@@ -162,14 +162,25 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
     // MEJORA-2: buscar imagen real de referencia server-side (evita CORS del navegador)
     parsed.imagen_url = await buscarImagen(parsed.imagen_query);
 
-    // MEJORA-3: link directo a Amazon — al producto exacto si hay ASIN, búsqueda por código si hay UPC/EAN/FNSKU, o por nombre si no hay nada
-    const asinValido = parsed.asin && /^(B0[A-Z0-9]{8}|X00[A-Z0-9]{6})$/i.test(parsed.asin);
-    if (asinValido) {
-      parsed.amazon_url = `https://www.amazon.com/dp/${parsed.asin}`;
-    } else if (parsed.codigo_identificador) {
-      parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(parsed.codigo_identificador)}`;
+    // MEJORA-3 (corregido): link directo a Amazon.
+    // OJO: el FNSKU (código que empieza en X00) es una etiqueta INTERNA de la bodega de Amazon —
+    // no es un identificador público, buscarlo en amazon.com nunca devuelve resultados.
+    // Solo un ASIN real (siempre empieza en B0) sirve para link directo /dp/.
+    // Solo UPC/EAN (puros números) sirven para buscar por código.
+    // Para todo lo demás (FNSKU, o sin código) buscamos por marca + nombre — eso sí encuentra el producto real.
+    const asin = parsed.asin;
+    const esASINReal = asin && /^B0[A-Z0-9]{8}$/i.test(asin);
+    const codigo = parsed.codigo_identificador;
+    const esUPCoEAN = codigo && /^\d{8,14}$/.test(codigo);
+
+    if (esASINReal) {
+      parsed.amazon_url = `https://www.amazon.com/dp/${asin}`;
+    } else if (esUPCoEAN) {
+      parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(codigo)}`;
     } else {
-      parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(parsed.nombre || "")}`;
+      const marca = parsed.marca && parsed.marca !== "Genérico/OEM" ? parsed.marca : "";
+      const termino = [marca, parsed.nombre].filter(Boolean).join(" ") || parsed.nombre || "";
+      parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(termino)}`;
     }
 
     return res.json(parsed);
