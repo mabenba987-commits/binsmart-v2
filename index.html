@@ -317,39 +317,31 @@ let imagenB64 = null;
 let imagenPreview = null;
 let ciudad = localStorage.getItem("binsmart_ciudad") || "";
 
-try {
-  const ciudadInput = document.getElementById("ciudad-input");
-  if (ciudadInput) {
-    ciudadInput.value = ciudad;
-    ciudadInput.addEventListener("input", () => {
-      ciudad = ciudadInput.value.trim();
-      localStorage.setItem("binsmart_ciudad", ciudad);
-      updateBtn();
-    });
+const ciudadInput = document.getElementById("ciudad-input");
+ciudadInput.value = ciudad;
+ciudadInput.addEventListener("input", () => {
+  ciudad = ciudadInput.value.trim();
+  localStorage.setItem("binsmart_ciudad", ciudad);
+  updateBtn();
+});
 
-    if (!ciudad) {
-      ciudadInput.placeholder = "Detectando tu ciudad...";
-      fetch("https://ipwho.is/")
-        .then(r => r.json())
-        .then(data => {
-          if (data && data.success && data.city && !ciudad) {
-            ciudad = data.city + (data.region ? ", " + data.region : "");
-            ciudadInput.value = ciudad;
-            localStorage.setItem("binsmart_ciudad", ciudad);
-            updateBtn();
-          } else {
-            ciudadInput.placeholder = "Ej: Miami, Houston, Chicago...";
-          }
-        })
-        .catch(() => { ciudadInput.placeholder = "Ej: Miami, Houston, Chicago..."; });
-    }
-  }
-} catch (e) {
-  console.error("Error configurando ciudad:", e);
+// Auto-detectar ciudad por IP la primera vez (sin pedir permiso, sin GPS) — el usuario puede corregirla si está mal
+if (!ciudad) {
+  ciudadInput.placeholder = "Detectando tu ciudad...";
+  fetch("https://ipwho.is/")
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success && data.city && !ciudad) {
+        ciudad = data.city + (data.region ? ", " + data.region : "");
+        ciudadInput.value = ciudad;
+        localStorage.setItem("binsmart_ciudad", ciudad);
+        updateBtn();
+      } else {
+        ciudadInput.placeholder = "Ej: Miami, Houston, Chicago...";
+      }
+    })
+    .catch(() => { ciudadInput.placeholder = "Ej: Miami, Houston, Chicago..."; });
 }
-Commit changes.
-
-Si al probar sigue sin salir el precio, quiere decir que el archivo tiene un error en otra parte (probablemente de cuando lo pegaste completo) y ahí sí te doy el archivo entero de nuevo para reemplazarlo sin arriesgarte a errores manuales. Avísame qué tal sale.
 
 // ── Precios ──────────────────────────────────────────────────────
 const PRECIOS = [1,2,4,6,8,12,16];
