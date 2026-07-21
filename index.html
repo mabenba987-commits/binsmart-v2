@@ -132,21 +132,15 @@
     <div style="font-size:13px;color:#9A8A70;margin-top:10px;">Fotografía · Analiza · Decide</div>
   </div>
 
-  <!-- Ciudad -->
-  <div class="card">
-    <div class="step-label"><span class="step-n">1</span><span class="step-txt">Tu ciudad (detectada automático)</span></div>
-    <input id="ciudad-input" type="text" placeholder="Ej: Miami, Houston, Chicago..." style="width:100%;padding:13px 14px;border-radius:10px;border:2px solid #E8E0D0;background:#F8F6F2;font-size:15px;color:#1A1A1A;font-family:inherit;"/>
-  </div>
-
   <!-- Precio -->
   <div class="card">
-    <div class="step-label"><span class="step-n">2</span><span class="step-txt">Precio del bin hoy</span></div>
+    <div class="step-label"><span class="step-n">1</span><span class="step-txt">Precio del bin hoy</span></div>
     <div class="price-grid" id="price-grid"></div>
   </div>
 
   <!-- Foto -->
   <div class="card">
-    <div class="step-label"><span class="step-n">3</span><span class="step-txt">Foto del producto</span></div>
+    <div class="step-label"><span class="step-n">2</span><span class="step-txt">Foto del producto</span></div>
     <div id="photo-btns" class="photo-btns">
       <input id="input-cam" type="file" accept="image/*" capture="environment" style="display:none"/>
       <input id="input-gal" type="file" accept="image/*" style="display:none"/>
@@ -266,7 +260,7 @@
 
       <!-- Reventa -->
       <div class="sec-card">
-        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label" id="sec-reventa-ciudad">Estrategia de Reventa</span></div>
+        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · Miami</span></div>
         <div class="metrics-grid">
           <div class="metric"><div class="metric-label">Vender a</div><div class="metric-val" id="m-precio" style="font-size:17px;color:#B12704;"></div></div>
           <div class="metric"><div class="metric-label">Ganancia est.</div><div class="metric-val" id="m-ganancia" style="font-size:17px;color:#2E7D32;"></div></div>
@@ -298,7 +292,7 @@
 
   <div style="padding:0 14px;">
     <button class="new-scan" onclick="reiniciar()">⚡ NUEVO ESCANEO</button>
-    <div class="footer" id="footer-ciudad">Bin Stores · Liquidación · Reventa Local</div>
+    <div class="footer">Miami · Bin Stores · Liquidación · Reventa Local</div>
   </div>
 </div>
 
@@ -315,33 +309,6 @@
 let precio = null;
 let imagenB64 = null;
 let imagenPreview = null;
-let ciudad = localStorage.getItem("binsmart_ciudad") || "";
-
-const ciudadInput = document.getElementById("ciudad-input");
-ciudadInput.value = ciudad;
-ciudadInput.addEventListener("input", () => {
-  ciudad = ciudadInput.value.trim();
-  localStorage.setItem("binsmart_ciudad", ciudad);
-  updateBtn();
-});
-
-// Auto-detectar ciudad por IP la primera vez (sin pedir permiso, sin GPS) — el usuario puede corregirla si está mal
-if (!ciudad) {
-  ciudadInput.placeholder = "Detectando tu ciudad...";
-  fetch("https://ipwho.is/")
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.success && data.city && !ciudad) {
-        ciudad = data.city + (data.region ? ", " + data.region : "");
-        ciudadInput.value = ciudad;
-        localStorage.setItem("binsmart_ciudad", ciudad);
-        updateBtn();
-      } else {
-        ciudadInput.placeholder = "Ej: Miami, Houston, Chicago...";
-      }
-    })
-    .catch(() => { ciudadInput.placeholder = "Ej: Miami, Houston, Chicago..."; });
-}
 
 // ── Precios ──────────────────────────────────────────────────────
 const PRECIOS = [1,2,4,6,8,12,16];
@@ -355,7 +322,7 @@ PRECIOS.forEach(p => {
     document.querySelectorAll(".price-btn").forEach(b => b.classList.remove("sel"));
     btn.classList.add("sel");
     updateBtn();
-    if (imagenB64 && ciudad) analizar();
+    if (imagenB64) analizar();
   };
   grid.appendChild(btn);
 });
@@ -373,7 +340,7 @@ function setupInput(id) {
       wrap.style.display = "block";
       document.getElementById("preview-img").src = res.preview;
       updateBtn();
-      if (precio && ciudad) analizar();
+      if (precio) analizar();
     }).catch(err => mostrarError(err.message));
   });
 }
@@ -391,9 +358,8 @@ function removePhoto() {
 
 function updateBtn() {
   const btn = document.getElementById("analyze-btn");
-  if (!ciudad) { btn.textContent = "① Escribe tu ciudad"; btn.className = "main-btn disabled"; }
-  else if (!precio) { btn.textContent = "② Elige el precio del bin"; btn.className = "main-btn disabled"; }
-  else if (!imagenB64) { btn.textContent = "③ Toma o sube una foto"; btn.className = "main-btn disabled"; }
+  if (!precio) { btn.textContent = "① Elige el precio del bin"; btn.className = "main-btn disabled"; }
+  else if (!imagenB64) { btn.textContent = "② Toma o sube una foto"; btn.className = "main-btn disabled"; }
   else { btn.textContent = "⚡ ANALIZAR PRODUCTO"; btn.className = "main-btn active"; }
 }
 
@@ -446,7 +412,7 @@ function show(id) {
 
 // ── Analizar ──────────────────────────────────────────────────────
 async function analizar() {
-  if (!imagenB64 || !precio || !ciudad) return;
+  if (!imagenB64 || !precio) return;
   const aImg = document.getElementById("analyzing-img");
   aImg.src = imagenPreview; aImg.style.display = "block";
   show("screen-analyzing");
@@ -455,7 +421,7 @@ async function analizar() {
     const res = await fetch("/api/analyze", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ b64: imagenB64, precio, ciudad })
+      body: JSON.stringify({ b64: imagenB64, precio })
     });
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
@@ -509,9 +475,6 @@ function mostrarResultado(r) {
   const mpHero = document.getElementById("mejor-para-hero");
   mpHero.style.color = mpStyle.color;
   mpHero.textContent = mpStyle.ico + " " + mpStyle.label;
-
-  document.getElementById("sec-reventa-ciudad").textContent = "Estrategia de Reventa · " + (ciudad || "Tu Ciudad");
-  document.getElementById("footer-ciudad").textContent = (ciudad || "Bin Stores") + " · Liquidación · Reventa Local";
 
   document.getElementById("condensed-name").textContent = r.nombre || "Producto sin identificar";
   document.getElementById("cp-pagas").textContent = "$" + precio;
