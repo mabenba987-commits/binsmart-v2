@@ -111,6 +111,7 @@ OTRAS REGLAS:
 - "sirve" es OBLIGATORIO y debe ser concreto: función principal + dónde/cómo se usa. Nunca lo dejes vago o genérico.
 - "uso_personal" y la sección de reventa deben ser claramente distintos — no mezclar ahorro doméstico con ganancia de reventa en el mismo texto.
 - imagen_query: 4-6 palabras en INGLÉS, describiendo el producto ARMADO o EN USO. Nunca "box" ni "packaging".
+- rasgo_distintivo: SOLO cuando marca sea "Genérico/OEM" (sin marca real): 2-4 palabras en ESPAÑOL con el detalle visual más distintivo de ESTA foto específica — color, patrón, forma o material que lo diferencie de productos genéricos similares (ej. "arcoíris multicolor", "negro mate compacto", "transparente con tapa azul"). Si hay marca real, usa null — no hace falta.
 - foto_muestra_producto: true SOLO si la foto que analizaste muestra el producto en sí (armado, fuera de caja, en uso, o claramente visible). false si la foto es de un código de barras, etiqueta, empaque cerrado, o cualquier cosa que NO deje ver cómo es el producto realmente — esto es importante porque esa foto se le mostrará al usuario como "referencia visual" y no queremos mostrarle un código de barras pensando que es el producto.
 - asin: si identificaste un ASIN o FNSKU confiable (empieza con B0... o X00...), inclúyelo tal cual aquí. Si no hay ASIN/FNSKU confirmado, usa null — NUNCA inventes uno.
 - uso_casos: exactamente 3, cada uno con un emoji distinto al inicio.
@@ -119,7 +120,7 @@ OTRAS REGLAS:
 - Nada de explicaciones, saludos ni texto fuera del JSON.
 
 RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markdown, sin backticks:
-{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","foto_muestra_producto":true,"asin":"B0XXXXXXXX o null","codigo_identificador":"código de barras leído (cualquier tipo) o null","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","mejor_para":"Reventa|Uso Personal|Ambos","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
+{"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","rasgo_distintivo":"detalle visual o null","foto_muestra_producto":true,"asin":"B0XXXXXXXX o null","codigo_identificador":"código de barras leído (cualquier tipo) o null","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","mejor_para":"Reventa|Uso Personal|Ambos","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 25000);
@@ -179,7 +180,8 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
       parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(codigo)}`;
     } else {
       const marca = parsed.marca && parsed.marca !== "Genérico/OEM" ? parsed.marca : "";
-      const termino = [marca, parsed.nombre].filter(Boolean).join(" ") || parsed.nombre || "";
+      const rasgo = !marca && parsed.rasgo_distintivo ? parsed.rasgo_distintivo : "";
+      const termino = [marca, parsed.nombre, rasgo].filter(Boolean).join(" ") || parsed.nombre || "";
       parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(termino)}`;
     }
 
