@@ -260,7 +260,7 @@
 
       <!-- Reventa -->
       <div class="sec-card">
-        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · Miami</span></div>
+        <div class="sec-title"><span class="sec-ico">💰</span><span class="sec-label">Estrategia de Reventa · EE. UU.</span></div>
         <div class="metrics-grid">
           <div class="metric"><div class="metric-label">Vender a</div><div class="metric-val" id="m-precio" style="font-size:17px;color:#B12704;"></div></div>
           <div class="metric"><div class="metric-label">Ganancia est.</div><div class="metric-val" id="m-ganancia" style="font-size:17px;color:#2E7D32;"></div></div>
@@ -292,7 +292,7 @@
 
   <div style="padding:0 14px;">
     <button class="new-scan" onclick="reiniciar()">⚡ NUEVO ESCANEO</button>
-    <div class="footer">Miami · Bin Stores · Liquidación · Reventa Local</div>
+    <div class="footer">EE. UU. · Bin Stores · Liquidación · Reventa Local</div>
   </div>
 </div>
 
@@ -398,7 +398,7 @@ function show(id) {
   ["screen-inicio","screen-analyzing","screen-result","screen-error"].forEach(s => {
     const el = document.getElementById(s);
     el.classList.remove("active");
-    el.style.display = "";
+    el.style.display = "none";
   });
   const target = document.getElementById(id);
   if (id === "screen-analyzing" || id === "screen-error") {
@@ -438,9 +438,9 @@ async function analizar() {
 const COLORES = {
   COMPRAR:{bg:"#1B5E20",bgGrad:"linear-gradient(135deg,#2E7D32,#1B5E20)",soft:"#E8F5E9",pill:"#C8E6C9",dark:"#1B5E20"},
   REVISAR:{bg:"#E65100",bgGrad:"linear-gradient(135deg,#F57C00,#E65100)",soft:"#FFF3E0",pill:"#FFE0B2",dark:"#BF360C"},
-  PASAR:  {bg:"#B71C1C",bgGrad:"linear-gradient(135deg,#D32F2F,#B71C1C)",soft:"#FFEBEE",pill:"#FFCDD2",dark:"#7F0000"},
+  PASAR:  {bg:"#527A68",bgGrad:"linear-gradient(135deg,#6B9080,#527A68)",soft:"#EDF3EF",pill:"#C8DCD2",dark:"#2F4A3E"},
 };
-const EMOJI = {COMPRAR:"🟢",REVISAR:"🟡",PASAR:"🔴"};
+const EMOJI = {COMPRAR:"🟢",REVISAR:"🟡",PASAR:"🟢"};
 const SUBTXT = {COMPRAR:"Buena oportunidad",REVISAR:"Verifica antes de pagar",PASAR:"No vale la pena"};
 const DMD_C = {Alta:"#1B5E20",Media:"#E65100",Baja:"#B71C1C"};
 const DMD_BG= {Alta:"#E8F5E9",Media:"#FFF3E0",Baja:"#FFEBEE"};
@@ -452,7 +452,7 @@ function mostrarResultado(r) {
   const v   = COLORES[vRaw] ? vRaw : "PASAR";
   const col = COLORES[v];
   const pct = Math.min(100, Math.max(0, r.confianza || 0));
-  const em  = EMOJI[v] || "🔴";
+  const em  = EMOJI[v] || "🟢";
 
   detalleAbierto = false;
   document.getElementById("full-details").classList.remove("open");
@@ -519,8 +519,13 @@ function mostrarResultado(r) {
   }
 
   const amazonBtn = document.getElementById("amazon-btn");
-  amazonBtn.href = r.amazon_url || ("https://www.amazon.com/s?k=" + encodeURIComponent(r.nombre || ""));
-  amazonBtn.textContent = imagenFallback ? "🛒 Ver en Amazon" : "🛒 Ver fotos reales en Amazon";
+  if (r.amazon_url) {
+    amazonBtn.style.display = "flex";
+    amazonBtn.href = r.amazon_url;
+    amazonBtn.textContent = r.amazon_verificado ? "🛒 Ver en Amazon" : "🔍 Buscar en Amazon";
+  } else {
+    amazonBtn.style.display = "none";
+  }
 
   const pillsEl = document.getElementById("pills");
   pillsEl.innerHTML = "";

@@ -86,6 +86,12 @@ REGLA DE VEREDICTO (evalúa en este orden — cualquier excepción de abajo gana
 6. REVISAR: margen atractivo pero hay riesgo (empaque dañado, accesorios dudosos, confianza media, estacionalidad, o cualquiera de las excepciones BUG-A/E/G/H).
 7. PASAR: roto, sin margen real, demanda nula, o no identificable con confianza suficiente.
 
+COHERENCIA VEREDICTO-NÚMEROS (regla dura — verifícala antes de responder):
+- La ganancia_estimada debe ser NETA: precio_reventa − precio del bin − costos realistas (comisiones, envío, tiempo de venta). Si la ganancia neta es menor a $3, el margen es débil.
+- Si la ganancia neta es claramente positiva (≥ $5) y el producto se puede vender (demanda no nula, no roto), el veredicto NUNCA puede ser PASAR. PASAR es solo para: roto/dañado, ganancia neta ≤ $0, demanda nula, o no identificable.
+- La "razon" debe decir EXACTAMENTE lo mismo que el veredicto: si la razón dice "revisar antes de comprar", el veredicto es REVISAR; si dice "no vale la pena", el veredicto es PASAR y la ganancia neta debe ser ≤ $0. Nunca escribas una razón que contradiga el veredicto.
+- BUG-G (regla 2 de arriba) da REVISAR, nunca PASAR: confianza 70-84% con precio estimado → 🟡 REVISAR.
+
 BUG-B — CONSUMIBLES: si el producto es un consumible o tiene fecha de caducidad (comida, suplementos, cosméticos, medicamentos, baterías, productos de limpieza), el PRIMER punto del checklist debe ser siempre "Verificar fecha de vencimiento/caducidad" — sin excepción.
 
 BUG-C — CLIMA FRÍO: productos de clima frío (calentadores, ropa de invierno, guantes térmicos, quitanieves, botas de nieve, decoración navideña de nieve) tienen demanda estacional a nivel nacional — evalúa demanda_local según temporada y región (alta en otoño/invierno en estados fríos) y NO la marques "Baja" automáticamente; solo usa "Baja" si el producto está claramente fuera de temporada o es de un nicho extremo sin mercado.
@@ -97,6 +103,7 @@ BUG-009 — REVENTA VS USO PERSONAL (siempre debe quedar clarísimo, nunca mezcl
 - El campo "uso_personal" y la sección de reventa deben seguir siendo textos independientes — "mejor_para" es solo la etiqueta rápida que resume cuál pesa más.
 
 OTRAS REGLAS:
+- NUNCA menciones códigos internos (BUG-A, BUG-G, BUG-009, etc.) en ningún campo que ve el usuario (razon, sirve, uso_personal, checklist, nombre). Esos códigos son solo instrucciones internas para ti. Explica en lenguaje claro y normal, por ejemplo: "precio estimado, sin código de barras verificable".
 - "sirve" es OBLIGATORIO y debe ser concreto: función principal + dónde/cómo se usa. Nunca lo dejes vago o genérico.
 - "uso_personal" y la sección de reventa deben ser claramente distintos — no mezclar ahorro doméstico con ganancia de reventa en el mismo texto.
 - imagen_query: 4-6 palabras en INGLÉS, describiendo el producto ARMADO o EN USO. Nunca "box" ni "packaging".
@@ -211,29 +218,35 @@ app.post("/api/analyze", async (req, res) => {
     }
     console.log("Analisis OK via " + proveedor);
 
-    // MEJORA-2: buscar imagen real de referencia server-side (evita CORS del navegador)
-    parsed.imagen_url = await buscarImagen(parsed.imagen_query);
-
-    // MEJORA-3 (corregido): link directo a Amazon.
+    // MEJORA-2: imagen real de referencia server-side (evita CORS del navegador).
+    // Solo se busca cuando el producto está verificado por un código leído en la foto
+    // (ASIN real o UPC/EAN): así la foto es del producto exacto. Sin código verificado,
+    // no se muestra foto de referencia — el frontend enseña "Tu foto" o nada —
+    // nunca la foto de otro producto.
+    // MEJORA-3 (corregido): link a Amazon.
     // OJO: el FNSKU (código que empieza en X00) es una etiqueta INTERNA de la bodega de Amazon —
     // no es un identificador público, buscarlo en amazon.com nunca devuelve resultados.
     // Solo un ASIN real (siempre empieza en B0) sirve para link directo /dp/.
     // Solo UPC/EAN (puros números) sirven para buscar por código.
-    // Para todo lo demás (FNSKU, o sin código) buscamos por marca + nombre — eso sí encuentra el producto real.
+    // Sin código leído: NO se muestra botón de Amazon (amazon_url = null) — mejor no mostrar
+    // nada que mandar al usuario a una página de otro producto.
     const asin = parsed.asin;
     const esASINReal = asin && /^B0[A-Z0-9]{8}$/i.test(asin);
     const codigo = parsed.codigo_identificador;
     const esUPCoEAN = codigo && /^\d{8,14}$/.test(codigo);
+    const verificadoPorCodigo = Boolean(esASINReal || esUPCoEAN);
+
+    parsed.imagen_url = verificadoPorCodigo ? await buscarImagen(parsed.imagen_query) : null;
 
     if (esASINReal) {
       parsed.amazon_url = `https://www.amazon.com/dp/${asin}`;
+      parsed.amazon_verificado = true;
     } else if (esUPCoEAN) {
       parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(codigo)}`;
+      parsed.amazon_verificado = false;
     } else {
-      const marca = parsed.marca && parsed.marca !== "Genérico/OEM" ? parsed.marca : "";
-      const rasgo = !marca && parsed.rasgo_distintivo ? parsed.rasgo_distintivo : "";
-      const termino = [marca, parsed.nombre, rasgo].filter(Boolean).join(" ") || parsed.nombre || "";
-      parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(termino)}`;
+      parsed.amazon_url = null;
+      parsed.amazon_verificado = false;
     }
 
     parsed.proveedor = proveedor; // para saber qué IA respondió (el frontend lo ignora)
