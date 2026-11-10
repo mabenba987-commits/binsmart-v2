@@ -3,7 +3,8 @@ const path    = require("path");
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
-const KEY  = process.env.ANTHROPIC_API_KEY;
+const GEMINI_KEY    = process.env.GEMINI_API_KEY;      // proveedor principal (gratis)
+const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY;   // respaldo
 
 app.use(express.json({ limit: "10mb" }));
 app.use(express.static(__dirname, {
@@ -51,19 +52,7 @@ async function buscarImagen(query) {
   }
 }
 
-// Proxy → Anthropic API
-app.post("/api/analyze", async (req, res) => {
-  if (!KEY) {
-    return res.status(500).json({ error: "ANTHROPIC_API_KEY no configurada en Render" });
-  }
-
-  try {
-    const { b64, precio } = req.body;
-    if (!b64 || precio === undefined) {
-      return res.status(400).json({ error: "Faltan campos: b64 y precio" });
-    }
-
-    const SYSTEM = `Eres BinSmart — experto en arbitraje para bin stores y liquidación en Miami/sur de Florida. Velocidad y precisión son la prioridad. Responde rápido, sin rodeos.
+const SYSTEM = `Eres BinSmart — experto en arbitraje para bin stores y liquidación en Estados Unidos. Velocidad y precisión son la prioridad. Responde rápido, sin rodeos.
 
 IDENTIFICACIÓN (orden estricto de confianza): FNSKU/ASIN Amazon (etiqueta blanca) > UPC > EAN > OCR del empaque > visual > comparación funcional.
 - Si ves una etiqueta blanca de Amazon con código X00... o B00..., ÚSALA SIEMPRE como fuente principal.
@@ -99,7 +88,7 @@ REGLA DE VEREDICTO (evalúa en este orden — cualquier excepción de abajo gana
 
 BUG-B — CONSUMIBLES: si el producto es un consumible o tiene fecha de caducidad (comida, suplementos, cosméticos, medicamentos, baterías, productos de limpieza), el PRIMER punto del checklist debe ser siempre "Verificar fecha de vencimiento/caducidad" — sin excepción.
 
-BUG-C — CLIMA FRÍO EN MIAMI: productos de clima frío (calentadores, ropa de invierno, guantes térmicos, quitanieves, botas de nieve, decoración navideña de nieve) deben recibir demanda_local = "Baja" automáticamente, sin importar qué tan bueno parezca el producto — Miami no tiene mercado real para esto.
+BUG-C — CLIMA FRÍO: productos de clima frío (calentadores, ropa de invierno, guantes térmicos, quitanieves, botas de nieve, decoración navideña de nieve) tienen demanda estacional a nivel nacional — evalúa demanda_local según temporada y región (alta en otoño/invierno en estados fríos) y NO la marques "Baja" automáticamente; solo usa "Baja" si el producto está claramente fuera de temporada o es de un nicho extremo sin mercado.
 
 BUG-009 — REVENTA VS USO PERSONAL (siempre debe quedar clarísimo, nunca mezclado):
 - "mejor_para" = "Reventa": cuando el margen de ganancia supera claramente el valor de uso personal (ej. producto que el usuario no necesita pero se vende rápido y bien).
@@ -122,15 +111,46 @@ OTRAS REGLAS:
 RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markdown, sin backticks:
 {"nombre":"nombre exacto","marca":"Marca o Genérico/OEM","modelo":null,"categoria":"Hogar|Herramientas|Electrónica|Juguetes|Deportes|Cocina|Jardín|Vehículo|Hobby|Industrial|Otro","sirve":"para qué sirve en 2 oraciones concretas","uso_casos":["🏠 caso 1","💼 caso 2","⚙️ caso 3"],"specs":["Spec 1","Spec 2","Spec 3"],"imagen_query":"product assembled in use","rasgo_distintivo":"detalle visual o null","foto_muestra_producto":true,"asin":"B0XXXXXXXX o null","codigo_identificador":"código de barras leído (cualquier tipo) o null","valor_amazon":"$XX o \\"$XX-$YY (estimado)\\" o null","valor_walmart":null,"valor_ebay":null,"precio_reventa":"$XX","ganancia_estimada":"$XX-$XX","demanda_local":"Alta|Media|Baja","canal_principal":"Facebook Marketplace","canal_secundario":"OfferUp","mejor_para":"Reventa|Uso Personal|Ambos","uso_personal":"1 oración directa enfocada en ahorro/utilidad personal","condicion_detectada":"Sellado|Open Box|Usado|Dañado|Sin determinar","checklist":["item 1","item 2","item 3"],"confianza":85,"veredicto":"COMPRAR|REVISAR|PASAR","razon":"razón en 1 oración"}`;
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
+// Proveedor principal: Google Gemini 2.5 Flash (tier gratuito)
+async function analyzeWithGemini(b64, precio) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+    const r = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-goog-api-key": GEMINI_KEY },
+      signal: controller.signal,
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ parts: [
+          { inlineData: { mimeType: "image/jpeg", data: b64 } },
+          { text: `Precio bin hoy: $${precio}. Devuelve SOLO el JSON.` }
+        ]}],
+        generationConfig: { responseMimeType: "application/json", maxOutputTokens: 1200, temperature: 0.2 }
+      })
+    });
+    if (!r.ok) throw new Error("Gemini HTTP " + r.status + ": " + (await r.text()).slice(0, 200));
+    const data = await r.json();
+    const raw = ((data.candidates || [])[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+    if (!raw) throw new Error("Gemini devolvio respuesta vacia");
+    return { parsed: JSON.parse(raw), proveedor: "gemini" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
+// Respaldo: Anthropic (usa los creditos restantes)
+async function analyzeWithAnthropic(b64, precio) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type":    "application/json",
         "anthropic-version": "2023-06-01",
-        "x-api-key":       KEY,
+        "x-api-key":       ANTHROPIC_KEY,
       },
       signal: controller.signal,
       body: JSON.stringify({
@@ -146,19 +166,50 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
         }]
       })
     });
-    clearTimeout(timeout);
-
-    if (!anthropicRes.ok) {
-      const errText = await anthropicRes.text();
-      return res.status(anthropicRes.status).json({ error: errText });
-    }
-
+    if (!anthropicRes.ok) throw new Error("Anthropic HTTP " + anthropicRes.status + ": " + (await anthropicRes.text()).slice(0, 200));
     const data  = await anthropicRes.json();
     const raw   = (data.content || []).map(b => b.text || "").join("").trim();
     const match = raw.match(/\{[\s\S]*\}/);
-    if (!match) return res.status(500).json({ error: "Respuesta inesperada de la IA: " + raw.slice(0, 100) });
+    if (!match) throw new Error("Respuesta inesperada de Anthropic: " + raw.slice(0, 100));
+    return { parsed: JSON.parse(match[0]), proveedor: "anthropic" };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
-    const parsed = JSON.parse(match[0]);
+// POST /api/analyze — intenta Gemini primero; si falla, usa Anthropic como respaldo
+app.post("/api/analyze", async (req, res) => {
+  try {
+    const { b64, precio } = req.body;
+    if (!b64 || precio === undefined) {
+      return res.status(400).json({ error: "Faltan campos: b64 y precio" });
+    }
+    if (!GEMINI_KEY && !ANTHROPIC_KEY) {
+      return res.status(500).json({ error: "No hay API keys configuradas en Render (GEMINI_API_KEY / ANTHROPIC_API_KEY)" });
+    }
+
+    let parsed = null, proveedor = null;
+
+    if (GEMINI_KEY) {
+      try {
+        const g = await analyzeWithGemini(b64, precio);
+        parsed = g.parsed; proveedor = g.proveedor;
+      } catch (e) {
+        console.error("Gemini fallo, usando respaldo:", e.message);
+      }
+    }
+    if (!parsed && ANTHROPIC_KEY) {
+      try {
+        const a = await analyzeWithAnthropic(b64, precio);
+        parsed = a.parsed; proveedor = a.proveedor;
+      } catch (e) {
+        console.error("Anthropic (respaldo) tambien fallo:", e.message);
+      }
+    }
+    if (!parsed) {
+      return res.status(500).json({ error: "Ambos proveedores de IA fallaron. Revisa las API keys en Render e intenta de nuevo." });
+    }
+    console.log("Analisis OK via " + proveedor);
 
     // MEJORA-2: buscar imagen real de referencia server-side (evita CORS del navegador)
     parsed.imagen_url = await buscarImagen(parsed.imagen_query);
@@ -185,6 +236,7 @@ RESPONDE ÚNICAMENTE CON JSON VÁLIDO — sin texto antes ni después, sin markd
       parsed.amazon_url = `https://www.amazon.com/s?k=${encodeURIComponent(termino)}`;
     }
 
+    parsed.proveedor = proveedor; // para saber qué IA respondió (el frontend lo ignora)
     return res.json(parsed);
 
   } catch (err) {
